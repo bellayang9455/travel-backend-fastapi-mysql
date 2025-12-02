@@ -1,0 +1,30 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .config import settings
+from .database import Base, engine, SessionLocal
+from .seed_data import seed
+from .routers import health, spots, itineraries, reviews, travel_records
+
+# 建表
+Base.metadata.create_all(bind=engine)
+
+# 種子資料（只在第一次有空資料時執行）
+with SessionLocal() as db:
+    seed(db)
+
+app = FastAPI(title="Travel Backend (FastAPI + MySQL)")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# routers
+app.include_router(health.router)
+app.include_router(spots.router)
+app.include_router(itineraries.router)
+app.include_router(reviews.router)
+app.include_router(travel_records.router)

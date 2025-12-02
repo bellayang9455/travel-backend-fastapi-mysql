@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: travel_db
+      MYSQL_USER: travel
+      MYSQL_PASSWORD: travel
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysqldata:/var/lib/mysql
+volumes:
+  mysqldata:
