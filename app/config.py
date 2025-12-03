@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         # mysql+pymysql://user:password@host:port/dbname
         return f"mysql+pymysql://{self.mysql_user}:{self.mysql_password}@{self.mysql_host}:{self.mysql_port}/{self.mysql_db}"
-
+ 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
