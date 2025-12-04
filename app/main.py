@@ -14,6 +14,11 @@ with SessionLocal() as db:
 
 app = FastAPI(title="Travel Backend (FastAPI + MySQL)")
 
+# 加上這段，讓根目錄 / 有東西可以回傳
+@app.get("/")
+def read_root():
+    return {"message": "恭喜！前端成功連上後端了！"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
