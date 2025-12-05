@@ -96,4 +96,8 @@ body {
   color: #888;
   font-size: 1rem;
 }
+.isDarkMode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
 </style>

@@ -105,7 +105,7 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
-/* ⭐⭐⭐ 3. 網格排版 (關鍵) ⭐⭐⭐ */
+/* 3. 網格排版 */
 .grid-layout {
   display: grid;
   /* 強制分成 4 欄，每一欄寬度一樣 (1fr) */

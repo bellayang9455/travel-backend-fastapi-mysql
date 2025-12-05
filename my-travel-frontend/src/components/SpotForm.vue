@@ -75,19 +75,20 @@ const submitData = async () => {
       </div>
 
       <div class="input-group">
-        <label>分類 <span class="required">*</span></label>
+        <label>分類<span class="required">*</span></label>
         <select v-model="formData.category" required>
           <option disabled value="">請選擇分類</option>
-          <option>自然</option>
-          <option>文化</option>
-          <option>美食</option>
-          <option>購物</option>
-          <option>其他</option>
+          <option>自然生態</option>
+          <option>歷史人文</option>
+          <option>在地美食</option>
+          <option>休閒娛樂</option>
+          <option>購物商圈</option>
+          <option>網美打卡</option>
         </select>
       </div>
 
-      <div class="input-group">
-        <label>地點 / 縣市 <span class="required">*</span></label>
+      <div class="input-group half">
+        <label>地點 <span class="required">*</span></label>
         <input 
           v-model="formData.location" 
           placeholder="例如：新北" 
@@ -95,7 +96,7 @@ const submitData = async () => {
         />
       </div>
 
-      <div class="input-group">
+      <div class="input-group half">
         <label>營業時間 (選填)</label>
         <input v-model="formData.hours" placeholder="例如：10:00-20:00 或 全天" />
       </div>
@@ -123,30 +124,33 @@ const submitData = async () => {
 }
 
 .form-box {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* 漂亮的陰影 */
+  background: var(--card-bg); /* 改用變數 */
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px var(--shadow-color); /* 改用變數 */
+  border: 1px solid var(--border-color); /* 改用變數 */
   width: 100%;
-  max-width: 500px;
-  border: 1px solid #eee;
+  max-width: 1000px; 
+  color: var(--text-color);
+  transition: all 0.3s;
 }
 
 .form-header {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 20px;
 }
 
 .form-header h3 {
   margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
+  color: var(--text-color);
+  font-size: 1.8rem;
 }
 
 .form-header p {
-  color: #888;
-  font-size: 0.9rem;
-  margin-top: 5px;
+  color: var(--text-secondary);
+  margin-top: 8px;
 }
 
 .input-group {
@@ -155,10 +159,9 @@ const submitData = async () => {
 
 label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-weight: bold;
-  color: #555;
-  font-size: 0.95rem;
+  color: var(--text-color);
 }
 
 /* 紅色星號樣式 */
@@ -169,39 +172,49 @@ label {
 
 input, select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px; /* 圓角 */
+  padding: 15px;
+  border: 1px solid var(--input-border); /* 改用變數 */
+  border-radius: 8px;
   font-size: 1rem;
-  box-sizing: border-box; /* 確保不會撐破 */
-  transition: border-color 0.3s;
+  box-sizing: border-box;
+  background-color: var(--input-bg); /* 改用變數 */
+  color: var(--text-color); /* 改用變數 */
+  transition: all 0.3s;
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: #4CAF50; /* 點擊時變綠色 */
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  background-color: var(--card-bg);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
+}
+
+.detect-tip {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  margin-top: 5px;
+  background: rgba(76, 175, 80, 0.1); /* 微微的綠色 */
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .submit-btn {
   width: 100%;
-  background-color: #4CAF50; /* 綠色按鈕 */
+  background-color: var(--primary-color);
   color: white;
-  padding: 14px;
+  padding: 16px;
   border: none;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.1s;
-  margin-top: 10px;
+  margin-top: 20px;
+  transition: opacity 0.3s;
+  letter-spacing: 2px;
 }
 
 .submit-btn:hover {
-  background-color: #43a047;
-}
-
-.submit-btn:active {
-  transform: scale(0.98); /* 點擊時縮小一點點 */
+  opacity: 0.9;
 }
 </style>
