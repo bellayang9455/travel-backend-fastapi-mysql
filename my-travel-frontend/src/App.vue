@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import SpotForm from './components/SpotForm.vue'
 import SpotList from './components/SpotList.vue'
+import Navbar from './components/Navbar.vue'
 
 // 1. 定義一個變數來記錄現在要在哪一頁
 // 預設是 'home' (主畫面/列表頁)
@@ -10,105 +11,37 @@ const currentPage = ref('home')
 // 切換頁面的功能
 const switchPage = (pageName) => {
   currentPage.value = pageName
+  window.scrollTo({top:0, behavior: 'smooth'}) // 切換頁面時捲動到最上方
 }
+const handleFilter = (location) => {
+  console.log('使用者選了地點:', location)
+  // 目前先印出來就好，之後再做篩選功能
+}   
 </script>
 
 <template>
-  <div class="main-container">
-    <h1>✈️ 我的旅遊日記</h1>
-
-    <div class="nav-area">
-      <button 
-        v-if="currentPage === 'home'" 
-        @click="switchPage('add')" 
-        class="btn-add"
-      >
-        ➕ 我要新增景點
-      </button>
-
-      <button 
-        v-if="currentPage === 'add'" 
-        @click="switchPage('home')" 
-        class="btn-back"
-      >
-        ⬅️ 返回列表
-      </button>
-    </div>
+  <div class="min-h-screen bg-gray-50 font-sans text-gray-900">
     
-    <div v-if="currentPage === 'home'">
-      <SpotList />
-    </div>
+    <Navbar 
+      :activePage="currentPage" 
+      @changePage="switchPage"
+      @filterLocation="handleFilter"
+    />
 
-    <div v-if="currentPage === 'add'">
-      <SpotForm />
-    </div>
+    <main class="max-w-7xl mx-auto py-8 px-4">
+      
+      <div v-if="currentPage === 'home'">
+        <div class="mb-8 text-center">
+          <h2 class="text-3xl font-bold text-gray-800 mb-2">探索世界之美</h2>
+          <!--<p class="text-gray-500">紀錄每一個感動的瞬間</p>-->
+        </div>
+        <SpotList />
+      </div>
 
+      <div v-if="currentPage === 'add'">
+        <SpotForm />
+      </div>
+
+    </main>
   </div>
 </template>
-
-<style>
-/* 全域設定 */
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #4994e0;
-  font-family: '微軟正黑體', Arial, sans-serif;
-}
-
-.main-container {
-  max-width: 800px; 
-  margin: 0 auto; 
-  padding: 60px;
-  min-height: 100vh;
-  background-color: white;
-  box-shadow: 0 0 15px rgba(0,0,0,0.05);
-}
-
-h1 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 30px;
-  letter-spacing: 2px;
-}
-
-/* 按鈕區域設定 */
-.nav-area {
-  text-align: right; /* 按鈕靠右邊比較順手 */
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #eee; /* 加條線區隔 */
-}
-
-/* 新增按鈕樣式 */
-.btn-add {
-  background-color: #42b983; /* Vue 的綠色 */
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 25px; /* 圓角 */
-  font-size: 16px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.btn-add:hover {
-  background-color: #3aa876;
-  transform: translateY(-2px); /* 浮起來的效果 */
-}
-
-/* 返回按鈕樣式 */
-.btn-back {
-  background-color: #607d8b; /* 灰藍色 */
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.btn-back:hover {
-  background-color: #546e7a;
-}
-</style>
