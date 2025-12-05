@@ -1,0 +1,197 @@
+<script setup>
+defineProps({
+  activePage: String
+})
+
+const emit = defineEmits(['changePage', 'filterLocation'])
+
+const locations = [
+  { name: '亞洲', value: 'Asia' },
+  { name: '歐洲', value: 'Europe' },
+  { name: '美洲', value: 'Americas' },
+  { name: '大洋洲', value: 'Oceania' },
+  { name: '台灣', value: 'Taiwan' }
+]
+</script>
+
+<template>
+  <nav class="navbar">
+    <div class="container">
+      
+      <div 
+        class="logo-area" 
+        @click="emit('changePage', 'home'); emit('filterLocation', '')"
+      >
+        <span class="icon">✈️</span>
+        <span class="title">我的旅遊日記</span>
+      </div>
+
+      <div class="menu-area">
+        <button 
+          class="menu-btn" 
+          :class="{ active: activePage === 'home' }"
+          @click="emit('changePage', 'home')"
+        >
+          🏠 首頁列表
+        </button>
+
+        <div class="dropdown">
+          <button class="menu-btn dropdown-trigger">
+            🌍 探索地點 ▼
+          </button>
+          
+          <div class="dropdown-content">
+            <a 
+              v-for="loc in locations" 
+              :key="loc.value"
+              @click.stop="emit('changePage', 'home'); emit('filterLocation', loc.value)"
+            >
+              {{ loc.name }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-area">
+        <button 
+          class="add-btn" 
+          @click="emit('changePage', 'add')"
+        >
+          ➕ 新增景點
+        </button>
+      </div>
+
+    </div>
+  </nav>
+</template>
+
+<style scoped>
+/* 1. 導覽列外框：固定在頂部 + 陰影 */
+.navbar {
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* 底部陰影 */
+  position: sticky; /* 黏在螢幕頂部 */
+  top: 0;
+  z-index: 100; /* 確保蓋在所有內容上面 */
+  height: 64px;
+}
+
+/* 2. 內容容器：置中 + 左右排版 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto; /* 置中 */
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  justify-content: space-between; /* 左右撐開 */
+  align-items: center; /* 垂直置中 */
+}
+
+/* 3. Logo 區域 */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.logo-area:hover {
+  opacity: 0.8;
+}
+
+.icon {
+  font-size: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 4. 中間選單按鈕 */
+.menu-area {
+  display: flex;
+  gap: 20px;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.menu-btn:hover {
+  background-color: #f5f5f5;
+  color: #007bff;
+}
+
+/* 當前頁面的按鈕樣式 (Active) */
+.menu-btn.active {
+  background-color: #e6f0ff;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* 5. 下拉選單 (Dropdown) */
+.dropdown {
+  position: relative; /* 讓下拉內容以這個為定位基準 */
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none; /* 預設隱藏 */
+  position: absolute;
+  top: 100%; /* 在按鈕正下方 */
+  left: 50%;
+  transform: translateX(-50%); /* 水平置中 */
+  background-color: white;
+  min-width: 120px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  padding: 8px 0;
+  border: 1px solid #eee;
+}
+
+/* ⭐ 關鍵：滑鼠移到 .dropdown 上時，顯示 .dropdown-content */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: #333;
+  padding: 10px 16px;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+  text-align: center;
+}
+
+.dropdown-content a:hover {
+  background-color: #f0f7ff;
+  color: #007bff;
+}
+
+/* 6. 右邊新增按鈕 */
+.add-btn {
+  background-color: #28a745; /* 綠色 */
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px; /* 圓形按鈕 */
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-btn:hover {
+  background-color: #218838;
+  transform: translateY(-2px); /* 微微浮起 */
+}
+</style>
