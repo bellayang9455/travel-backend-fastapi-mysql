@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import SpotForm from './components/SpotForm.vue'
 import SpotList from './components/SpotList.vue'
 import Navbar from './components/Navbar.vue'
+import RegisterForm from './components/RegisterForm.vue' // ⭐ 1. 引入註冊組件
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
@@ -67,11 +68,17 @@ watch(isDarkMode, (newVal) => {
         <SpotForm />
       </div>
 
+      <!-- ⭐ 2. 註冊頁面內容 -->
+      <div v-if="currentPage === 'register'">
+        <RegisterForm />
+      </div>
+
     </main>
   </div>
 </template>
 
 <style>
+/* CSS 保持原樣，不需要變動 */
 :root {
   /* 白天模式 (預設) */
   --bg-color: #fafafa;
@@ -102,7 +109,6 @@ watch(isDarkMode, (newVal) => {
   --link-color: #e0e0e0;
 }
 
-/* 全域設定 */
 body {
   margin: 0 !important;
   padding: 0 !important;
@@ -119,7 +125,6 @@ body {
   transition: all 0.3s ease;
 }
 
-/* 內容區域設定 */
 .content-area {
   padding-top: 80px; 
   max-width: 1200px; 
@@ -130,7 +135,6 @@ body {
   min-height: 100vh;
 }
 
-/* 標題區塊樣式 */
 .hero-header {
   text-align: center;
   margin-bottom: 40px;
@@ -140,13 +144,13 @@ body {
 .hero-header h2 {
   font-size: 2rem;
   font-weight: bold;
-  color: var(--text-color); /* 使用變數 */
+  color: var(--text-color); 
   margin-bottom: 10px;
   letter-spacing: 2px;
 }
 
 .hero-header p {
-  color: var(--text-secondary); /* 使用變數 */
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 </style>

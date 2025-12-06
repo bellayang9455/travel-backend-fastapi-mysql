@@ -74,12 +74,12 @@ const submitData = async () => {
           <option disabled value="">請選擇分類</option>
           
           <optgroup label="景點類型">
-            <option value="自然">🏞️ 自然生態</option>
-            <option value="文化">🏯 歷史人文</option>
-            <option value="美食">🍜 在地美食</option>
-            <option value="娛樂">🎡 休閒娛樂</option>
-            <option value="購物">🛍️ 購物商圈</option>
-            <option value="打卡">📸 網美打卡</option>
+            <option>🏞️ 自然生態</option>
+            <option>🏯 歷史人文</option>
+            <option>🍜 在地美食</option>
+            <option>🎡 休閒娛樂</option>
+            <option>🛍️ 購物商圈</option>
+            <option>📸 網美打卡</option>
           </optgroup>
 
           <optgroup label="住宿類型">
