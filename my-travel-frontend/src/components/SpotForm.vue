@@ -12,18 +12,12 @@ const formData = ref({
 })
 
 const submitData = async () => {
-  // ⭐ 防線 1：JavaScript 檢查
-  // 檢查必填欄位是否為空 (trim() 去除前後空白)
-  if (!formData.value.name.trim() || 
-      !formData.value.category || 
-      !formData.value.location.trim()) {
-    
+  if (!formData.value.name.trim() || !formData.value.category || !formData.value.location.trim()) {
     alert('❌ 請填寫所有必填欄位 (名稱、分類、地點)！')
-    return // ⛔ 程式停在這裡，不繼續往下跑
+    return
   }
 
   try {
-    // 資料轉換：把逗號分隔的字串轉成 JSON 格式
     const featuresJson = {
       features: formData.value.featuresStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
     }
@@ -75,15 +69,28 @@ const submitData = async () => {
       </div>
 
       <div class="input-group">
-        <label>分類<span class="required">*</span></label>
+        <label>分類 <span class="required">*</span></label>
         <select v-model="formData.category" required>
           <option disabled value="">請選擇分類</option>
-          <option>自然生態</option>
-          <option>歷史人文</option>
-          <option>在地美食</option>
-          <option>休閒娛樂</option>
-          <option>購物商圈</option>
-          <option>網美打卡</option>
+          
+          <optgroup label="景點類型">
+            <option value="自然">🏞️ 自然生態</option>
+            <option value="文化">🏯 歷史人文</option>
+            <option value="美食">🍜 在地美食</option>
+            <option value="娛樂">🎡 休閒娛樂</option>
+            <option value="購物">🛍️ 購物商圈</option>
+            <option value="打卡">📸 網美打卡</option>
+          </optgroup>
+
+          <optgroup label="住宿類型">
+            <option value="飯店">🏨 飯店</option>
+            <option value="民宿">🏩 民宿</option>
+            <option value="露營">🏕️ 露營</option>
+            <option value="青旅">🛏️ 青年旅館</option>
+            <option value="公寓式住宿">🏠 公寓式住宿</option>
+          </optgroup>
+
+          <option value="其他">✨ 其他</option>
         </select>
       </div>
 
@@ -131,7 +138,7 @@ const submitData = async () => {
   border: 1px solid var(--border-color); /* 改用變數 */
   width: 100%;
   max-width: 1000px; 
-  color: var(--text-color);
+  color: var(--text-color); /* 改用變數 */
   transition: all 0.3s;
 }
 
@@ -187,16 +194,6 @@ input:focus, select:focus {
   background-color: var(--card-bg);
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
-}
-
-.detect-tip {
-  font-size: 0.9rem;
-  color: var(--primary-color);
-  margin-top: 5px;
-  background: rgba(76, 175, 80, 0.1); /* 微微的綠色 */
-  padding: 5px 10px;
-  border-radius: 4px;
-  display: inline-block;
 }
 
 .submit-btn {

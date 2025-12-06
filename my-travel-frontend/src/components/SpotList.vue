@@ -78,11 +78,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 1. 外層容器：給一點內距 */
+/* 1. 外層容器 */
 .spot-container {
   padding: 20px;
-  max-width: 1200px; /* 限制最大寬度，避免螢幕太大時拉太長 */
-  margin: 0 auto;    /* 置中 */
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* 2. 標題樣式 */
@@ -91,29 +91,40 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid var(--border-color); /* 改用變數 */
   padding-bottom: 10px;
 }
 
 .header h2 {
   margin: 0;
-  color: #333;
+  color: var(--text-color); /* 改用變數 */
 }
 
 .count {
-  color: #888;
+  color: var(--text-secondary); /* 改用變數 */
   font-size: 0.9rem;
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-secondary); /* 改用變數 */
+  font-size: 1.2rem;
+  margin-top: 50px;
 }
 
 /* 3. 網格排版 */
 .grid-layout {
   display: grid;
-  /* 強制分成 4 欄，每一欄寬度一樣 (1fr) */
   grid-template-columns: repeat(4, 1fr); 
-  gap: 20px; /* 卡片之間的距離 */
+  gap: 20px;
 }
 
-/* 如果螢幕真的太小 (手機)，還是要變直的比較好看，不然會擠爆 */
+@media (max-width: 1024px) {
+  .grid-layout {
+    grid-template-columns: repeat(2, 1fr); /* 平板變 2 欄 */
+  }
+}
+
 @media (max-width: 768px) {
   .grid-layout {
     grid-template-columns: repeat(1, 1fr); /* 手機變 1 欄 */
@@ -122,45 +133,44 @@ onMounted(() => {
 
 /* 4. 卡片樣式 */
 .card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 12px; /* 圓角 */
-  overflow: hidden; /* 讓圖片不凸出去 */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* 淡淡陰影 */
-  transition: transform 0.2s; /* 動畫 */
+  background: var(--card-bg); /* 改用變數 (白/深灰) */
+  border: 1px solid var(--border-color); /* 改用變數 */
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px var(--shadow-color); /* 改用變數 */
+  transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
 }
 
 .card:hover {
-  transform: translateY(-5px); /* 滑鼠移上去浮起來 */
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px var(--shadow-color);
 }
 
 /* 5. 圖片區塊 */
 .image-box {
   position: relative;
-  height: 160px; /* ⭐ 固定高度，這樣圖片就不會忽大忽小 ⭐ */
+  height: 160px;
   overflow: hidden;
 }
 
 .image-box img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 裁切圖片填滿，不變形 */
+  object-fit: cover;
   transition: transform 0.5s;
 }
 
 .card:hover .image-box img {
-  transform: scale(1.1); /* 圖片放大特效 */
+  transform: scale(1.1);
 }
 
-/* 圖片上的標籤 */
 .category-tag {
   position: absolute;
   top: 10px;
   left: 10px;
   background: rgba(255, 255, 255, 0.9);
-  color: #007bff;
+  color: var(--primary-color);
   font-size: 12px;
   font-weight: bold;
   padding: 4px 8px;
@@ -186,15 +196,15 @@ onMounted(() => {
 .card-body h3 {
   margin: 0 0 10px 0;
   font-size: 1.1rem;
-  color: #333;
-  white-space: nowrap; /* 不換行 */
+  color: var(--text-color); /* 改用變數 */
+  white-space: nowrap; 
   overflow: hidden;
-  text-overflow: ellipsis; /* 太長變... */
+  text-overflow: ellipsis;
 }
 
 .info-row {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary); /* 改用變數 */
   margin-bottom: 10px;
 }
 
@@ -202,25 +212,27 @@ onMounted(() => {
   display: flex;
   gap: 5px;
   margin-bottom: 10px;
+  flex-wrap: wrap; /* 標籤太多時自動換行 */
 }
 
 .feature-tag {
-  background: #eef;
-  color: #007bff;
+  background: var(--input-bg); /* 改用變數 (淺灰/深灰) */
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .footer {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-color); /* 改用變數 */
   padding-top: 10px;
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary); /* 改用變數 */
 }
 
 .label {
   font-weight: bold;
-  color: #555;
+  color: var(--text-color); /* 改用變數 */
 }
 </style>
