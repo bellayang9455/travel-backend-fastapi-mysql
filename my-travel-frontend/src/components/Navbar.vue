@@ -11,6 +11,7 @@ const locations = [
   { name: '歐洲', value: 'Europe' },
   { name: '美洲', value: 'Americas' },
   { name: '大洋洲', value: 'Oceania' },
+  {name: '非洲', value: 'Africa' },
   { name: '台灣', value: 'Taiwan' }
 ]
 
