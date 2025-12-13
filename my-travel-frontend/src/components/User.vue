@@ -9,6 +9,21 @@ const emit = defineEmits(['changePage'])
 const userId = localStorage.getItem('userId'); 
 const API_URL = "http://localhost:8000"; 
 
+// --- 常用國碼列表 ---
+const countryCodes = [
+  { code: '+886', label: '台灣 (+886)' },
+  { code: '+86', label: '中國 (+86)' },
+  { code: '+852', label: '香港 (+852)' },
+  { code: '+81', label: '日本 (+81)' },
+  { code: '+82', label: '韓國 (+82)' },
+  { code: '+1', label: '美國 (+1)' },
+  { code: '+44', label: '英國 (+44)' },
+  { code: '+61', label: '澳洲 (+61)' },
+  { code: '+65', label: '新加坡 (+65)' },
+  { code: '+33', label: '法國 (+33)' },
+  { code: '+49', label: '德國 (+49)' },
+]
+
 // --- 狀態變數 ---
 const user = ref(null);
 const loading = ref(true);
@@ -17,7 +32,8 @@ const isEditing = ref(false);
 
 const formData = reactive({
   name: '',
-  phone: '',
+  phonePrefix: '+886', // 新增：國碼
+  phoneNumber: '',     // 新增：電話號碼 (不含國碼)
   birthday: '',
   likes: {}
 });
@@ -25,7 +41,6 @@ const formData = reactive({
 // --- 方法 ---
 
 const fetchUser = async () => {
-  // 檢查是否已登入
   if (!userId) {
     alert("您尚未登入，請先登入！");
     emit('changePage', 'login'); 
@@ -44,7 +59,7 @@ const fetchUser = async () => {
     if (err.response && (err.response.status === 404 || err.response.status === 401)) {
         localStorage.clear();
         alert("登入已過期，請重新登入");
-        emit('changePage', 'login'); // 通知換頁
+        emit('changePage', 'login'); 
     }
   } finally {
     loading.value = false;
@@ -53,12 +68,30 @@ const fetchUser = async () => {
 
 const startEditing = () => {
   formData.name = user.value.name;
-  formData.phone = user.value.phone;
+  
+  // --- 處理電話號碼拆解邏輯 ---
+  // 假設資料庫存的是 "+886912345678" 或純號碼 "0912345678"
+  const fullPhone = user.value.phone || '';
+  
+  // 嘗試比對是否包含已知國碼
+  const foundCode = countryCodes.find(c => fullPhone.startsWith(c.code));
+  
+  if (foundCode) {
+    formData.phonePrefix = foundCode.code;
+    formData.phoneNumber = fullPhone.replace(foundCode.code, '');
+  } else {
+    // 如果沒找到對應國碼 (或是舊資料沒有 +號)，預設給 +886，並保留原字串
+    formData.phonePrefix = '+886';
+    formData.phoneNumber = fullPhone;
+  }
+
+  // --- 處理生日 ---
   if (user.value.birthday) {
     formData.birthday = user.value.birthday.split('T')[0];
   } else {
     formData.birthday = '';
   }
+  
   formData.likes = user.value.likes ? JSON.parse(JSON.stringify(user.value.likes)) : {};
   isEditing.value = true;
 };
@@ -69,9 +102,12 @@ const cancelEdit = () => {
 
 const saveUser = async () => {
   try {
+    // 組合國碼與電話
+    const fullPhone = `${formData.phonePrefix}${formData.phoneNumber}`;
+
     const payload = {
       name: formData.name,
-      phone: formData.phone,
+      phone: fullPhone, // 這裡送出完整的號碼
       birthday: formData.birthday ? new Date(formData.birthday).toISOString() : null,
       likes: formData.likes
     };
@@ -120,9 +156,22 @@ onMounted(() => {
 
       <div v-else class="edit-form">
         <div class="form-group"><label>姓名</label><input v-model="formData.name" type="text" /></div>
-        <div class="form-group"><label>電話</label><input v-model="formData.phone" type="text" /></div>
+        
+        <div class="form-group">
+          <label>電話</label>
+          <div class="phone-input-group">
+            <select v-model="formData.phonePrefix" class="phone-select">
+              <option v-for="c in countryCodes" :key="c.code" :value="c.code">
+                {{ c.label }}
+              </option>
+            </select>
+            <input v-model="formData.phoneNumber" type="text" placeholder="請輸入號碼" class="phone-input" />
+          </div>
+        </div>
+
         <div class="form-group"><label>生日</label><input v-model="formData.birthday" type="date" /></div>
         <div class="form-group"><label>喜好 (Food)</label><input v-model="formData.likes.food" type="text" /></div>
+        
         <div class="button-group">
           <button @click="saveUser" class="btn-save">儲存</button>
           <button @click="cancelEdit" class="btn-cancel">取消</button>
@@ -138,26 +187,26 @@ onMounted(() => {
   margin: 40px auto;
   padding: 20px;
   font-family: '微軟正黑體', Arial, sans-serif;
-  color: var(--text-color); /* 改用變數 */
+  color: var(--text-color); 
 }
 
 h1 {
   text-align: center;
   margin-bottom: 20px;
-  color: var(--text-color); /* 改用變數 */
+  color: var(--text-color); 
 }
 
 .profile-card {
-  background: var(--card-bg); /* 改用變數 */
+  background: var(--card-bg); 
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 4px 10px var(--shadow-color); /* 改用變數 */
-  border: 1px solid var(--border-color); /* 改用變數 */
+  box-shadow: 0 4px 10px var(--shadow-color); 
+  border: 1px solid var(--border-color); 
 }
 
 .info-group, .form-group {
   margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color); /* 改用變數 */
+  border-bottom: 1px solid var(--border-color); 
   padding-bottom: 10px;
 }
 
@@ -165,29 +214,44 @@ label {
   display: block;
   font-weight: bold;
   margin-bottom: 8px;
-  color: var(--text-secondary); /* 改用變數 */
+  color: var(--text-secondary); 
 }
 
 span {
-  color: var(--text-color); /* 改用變數 */
+  color: var(--text-color); 
   font-size: 1.1rem;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--input-border); /* 改用變數 */
+  border: 1px solid var(--input-border); 
   border-radius: 6px;
   box-sizing: border-box;
-  background-color: var(--input-bg); /* 改用變數 */
-  color: var(--text-color); /* 改用變數 */
+  background-color: var(--input-bg); 
+  color: var(--text-color); 
   transition: all 0.3s;
 }
 
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+/* ⭐ 新增：電話輸入框組合樣式 */
+.phone-input-group {
+  display: flex;
+  gap: 10px; /* 國碼和號碼中間的間距 */
+}
+
+.phone-select {
+  width: 35%; /* 國碼選單寬度 */
+  flex-shrink: 0;
+}
+
+.phone-input {
+  flex-grow: 1; /* 號碼欄位佔滿剩餘空間 */
 }
 
 .tags {
@@ -197,7 +261,7 @@ input:focus {
 }
 
 .tag {
-  background-color: var(--input-bg); /* 改用變數 */
+  background-color: var(--input-bg); 
   color: var(--primary-color);
   padding: 5px 12px;
   border-radius: 20px;

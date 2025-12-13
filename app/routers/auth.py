@@ -79,3 +79,15 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         "user_id": user.id,
         "user_name": user.name or user.email
     }
+    
+# --- 3. 檢查名稱是否重複 API (GET /check_name/{name}) ---
+@router.get("/check_name/{name}")
+def check_name_exists(name: str, db: Session = Depends(get_db)):
+    # 在資料庫找找看有沒有這個名字
+    user = db.query(User).filter(User.name == name).first()
+    
+    # 如果 user 存在，回傳 exists=True
+    if user:
+        return {"exists": True}
+    else:
+        return {"exists": False}
