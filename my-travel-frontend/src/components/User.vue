@@ -110,7 +110,7 @@ onMounted(() => {
         <div class="info-group"><label>電話：</label><span>{{ user.phone || '未設定' }}</span></div>
         <div class="info-group"><label>生日：</label><span>{{ formatDate(user.birthday) }}</span></div>
         <div class="info-group">
-          <label>喜好 (JSON)：</label>
+          <label>喜好：</label>
           <div class="tags">
             <span v-for="(value, key) in user.likes" :key="key" class="tag">{{ key }}: {{ value }}</span>
           </div>
@@ -133,16 +133,131 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* CSS 保持原樣 */
-.user-profile-container { max-width: 600px; margin: 40px auto; padding: 20px; font-family: Arial, sans-serif; }
-.profile-card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.info-group, .form-group { margin-bottom: 20px; }
-label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;}
-.btn-primary { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; width: 100%; }
-.button-group { display: flex; gap: 10px; margin-top: 20px; }
-.btn-save { background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 6px; flex: 1; cursor: pointer;}
-.btn-cancel { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; flex: 1; cursor: pointer;}
-.loading, .error { text-align: center; margin-top: 20px; }
-.error { color: red; }
+.user-profile-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: '微軟正黑體', Arial, sans-serif;
+  color: var(--text-color); /* 改用變數 */
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--text-color); /* 改用變數 */
+}
+
+.profile-card {
+  background: var(--card-bg); /* 改用變數 */
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px var(--shadow-color); /* 改用變數 */
+  border: 1px solid var(--border-color); /* 改用變數 */
+}
+
+.info-group, .form-group {
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color); /* 改用變數 */
+  padding-bottom: 10px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--text-secondary); /* 改用變數 */
+}
+
+span {
+  color: var(--text-color); /* 改用變數 */
+  font-size: 1.1rem;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--input-border); /* 改用變數 */
+  border-radius: 6px;
+  box-sizing: border-box;
+  background-color: var(--input-bg); /* 改用變數 */
+  color: var(--text-color); /* 改用變數 */
+  transition: all 0.3s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background-color: var(--input-bg); /* 改用變數 */
+  color: var(--primary-color);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-save {
+  background: #2ecc71;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  flex: 1;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-cancel {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  flex: 1;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.loading, .error {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.error {
+  color: #e74c3c;
+}
 </style>

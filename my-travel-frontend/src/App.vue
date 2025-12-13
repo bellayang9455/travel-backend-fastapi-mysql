@@ -72,7 +72,7 @@ watch(isDarkMode, (newVal) => {
 
       <div v-if="currentPage === 'register'">
         <RegisterForm 
-          @registerSuccess="switchPage('registerSuccess')" 
+          @registerSuccess="switchPage('login')" 
           @changePage="switchPage" 
         />
       </div>
