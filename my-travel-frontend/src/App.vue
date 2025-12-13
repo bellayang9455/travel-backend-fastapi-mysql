@@ -3,7 +3,8 @@ import { ref, onMounted, watch } from 'vue'
 import SpotForm from './components/SpotForm.vue'
 import SpotList from './components/SpotList.vue'
 import Navbar from './components/Navbar.vue'
-import RegisterForm from './components/RegisterForm.vue' // ⭐ 1. 引入註冊組件
+import RegisterForm from './components/RegisterForm.vue' // 引入註冊組件
+import User from './components/User.vue'
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
