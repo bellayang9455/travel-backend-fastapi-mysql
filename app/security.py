@@ -12,11 +12,11 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # 1. 驗證密碼 (比對輸入的密碼 vs 資料庫的雜湊碼)
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 # 2. 產生密碼雜湊 (把明碼加密)
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password[:72])
 
 # 3. 產生 JWT Token (通行證)
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

@@ -1,7 +1,10 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from datetime import datetime
+from datetime import datetime, timedelta
 from .database import Base
+
+def taiwan_time():
+    return datetime.utcnow() + timedelta(hours=8)
 
 class User(Base):
     __tablename__ = "users"
@@ -14,8 +17,8 @@ class User(Base):
     birthday: Mapped[datetime | None] = mapped_column(DateTime)
     likes: Mapped[dict | None] = mapped_column(JSON)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time, onupdate=taiwan_time)
 
     itineraries: Mapped[list["Itinerary"]] = relationship(back_populates="owner")
     reviews: Mapped[list["Review"]] = relationship(back_populates="user")
@@ -36,8 +39,8 @@ class Itinerary(Base):
     owner_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     owner: Mapped["User"] = relationship(back_populates="itineraries")
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time, onupdate=taiwan_time)
 
     spots: Mapped[list["ItinerarySpot"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
     travel_records: Mapped[list["TravelRecord"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
