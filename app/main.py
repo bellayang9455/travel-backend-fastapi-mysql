@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import Base, engine, SessionLocal
 from .seed_data import seed
-from .routers import health, spots, itineraries, reviews, travel_records
+from .routers import health, spots, itineraries, reviews, travel_records, users
+
 
 # 建表
 Base.metadata.create_all(bind=engine)
@@ -33,3 +34,4 @@ app.include_router(spots.router)
 app.include_router(itineraries.router)
 app.include_router(reviews.router)
 app.include_router(travel_records.router)
+app.include_router(users.router)
