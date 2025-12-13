@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from .models import User  # Assuming the User model is in .models
-from .database import get_db  # Assuming you have a get_db dependency
-from .schemas import UserResponse, UserUpdate # Assuming Pydantic models are in .schemas
+from ..models import User  # Assuming the User model is in .models
+from ..database import get_db  # Assuming you have a get_db dependency
+from ..schemas import UserResponse, UserUpdate # Assuming Pydantic models are in .schemas
 
 router = APIRouter(prefix="/users", tags=["users"])
 

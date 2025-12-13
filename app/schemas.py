@@ -8,9 +8,18 @@ class UserBase(BaseModel):
     email: str
     name: Optional[str] = None
     phone: Optional[str] = None
+    birthday: Optional[datetime] = None
+    likes: Optional[Any] = None
 
 class UserCreate(UserBase):
     password: str = Field(min_length=4)
+    
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    birthday: Optional[datetime] = None
+    likes: Optional[Any] = None
+    password: Optional[str] = Field(None, min_length=4)
 
 class UserOut(UserBase):
     id: str
