@@ -1,17 +1,24 @@
 <script setup>
-defineProps({
+import { ref, onMounted, watch } from 'vue'
+
+const props = defineProps({
   activePage: String,
   isDarkMode: Boolean
 })
 
 const emit = defineEmits(['changePage', 'filterLocation', 'filterCategory', 'filterAccommodation', 'toggleTheme'])
 
+// --- 狀態變數 ---
+const isLoggedIn = ref(false)
+const userName = ref('')
+
+// --- 下拉選單資料 (保持不變) ---
 const locations = [
   { name: '亞洲', value: 'Asia' },
   { name: '歐洲', value: 'Europe' },
   { name: '美洲', value: 'Americas' },
   { name: '大洋洲', value: 'Oceania' },
-  {name: '非洲', value: 'Africa' },
+  { name: '非洲', value: 'Africa' },
   { name: '台灣', value: 'Taiwan' }
 ]
 
@@ -32,13 +39,57 @@ const accommodations = [
   { name: '🛏️ 青年旅館', value: '青年旅館' },
   { name: '🏠 公寓式住宿', value: '公寓式住宿' }
 ]
+
+// --- 方法 ---
+
+// 檢查登入狀態
+const checkLoginStatus = () => {
+  const token = localStorage.getItem('token')
+  const name = localStorage.getItem('userName')
+  
+  if (token && name) {
+    isLoggedIn.value = true
+    userName.value = name
+  } else {
+    isLoggedIn.value = false
+    userName.value = ''
+  }
+}
+
+// 登出功能
+const handleLogout = () => {
+  if (confirm('確定要登出嗎？')) {
+    // 1. 清除 localStorage
+    localStorage.clear()
+    
+    // 2. 更新狀態
+    isLoggedIn.value = false
+    userName.value = ''
+    
+    // 3. 跳轉回登入頁或首頁
+    alert('已成功登出 👋')
+    emit('changePage', 'login')
+  }
+}
+
+// --- 生命週期與監聽 ---
+
+// 1. 一載入就檢查
+onMounted(() => {
+  checkLoginStatus()
+})
+
+// 2. 當頁面切換時 (例如從 Login 跳轉到 Home)，重新檢查狀態
+// 這是讓 Navbar 能即時反應登入/登出的關鍵！
+watch(() => props.activePage, () => {
+  checkLoginStatus()
+})
 </script>
 
 <template>
   <nav class="navbar">
     <div class="container">
       
-      <!-- 左側 Logo -->
       <div 
         class="logo-area" 
         @click="emit('changePage', 'home'); emit('filterLocation', ''); emit('filterCategory', ''); emit('filterAccommodation', '')"
@@ -47,7 +98,6 @@ const accommodations = [
         <span class="title">旅遊日記</span>
       </div>
 
-      <!-- 中間選單 -->
       <div class="menu-area">
         <button 
           class="menu-btn" 
@@ -57,7 +107,6 @@ const accommodations = [
           🏠 首頁列表
         </button>
 
-        <!-- 地點下拉選單 -->
         <div class="dropdown">
           <button class="menu-btn dropdown-trigger">
             🌍 探索地點 ▼
@@ -74,7 +123,6 @@ const accommodations = [
           </div>
         </div>
 
-        <!-- 分類下拉選單 -->
         <div class="dropdown">
           <button class="menu-btn dropdown-trigger">
             🏷️ 景點分類 ▼
@@ -91,7 +139,6 @@ const accommodations = [
           </div>
         </div>
 
-        <!-- 住宿下拉選單 -->
         <div class="dropdown">
           <button class="menu-btn dropdown-trigger">
             🛏️ 住宿類型 ▼
@@ -109,10 +156,8 @@ const accommodations = [
         </div>
       </div>
 
-      <!-- 右側動作按鈕 -->
       <div class="action-area">
         
-        <!-- 風格切換 -->
         <button class="theme-btn" @click="emit('toggleTheme')" title="切換風格">
           {{ isDarkMode ? '🌙' : '☀️' }}
         </button>
@@ -124,16 +169,41 @@ const accommodations = [
           ➕ 新增景點
         </button>
 
-        <!-- ⭐ 修改：註冊/登入區塊 -->
         <div class="user-auth">
-          <!-- 點擊註冊，切換到 register 頁面 -->
-          <button class="text-btn" @click="emit('changePage', 'register')">
-            註冊
-          </button>
-          <span class="divider">|</span>
-          <button class="text-btn">
-            登入
-          </button>
+          
+          <template v-if="!isLoggedIn">
+            <button 
+              class="text-btn" 
+              :class="{ active: activePage === 'register' }"
+              @click="emit('changePage', 'register')"
+            >
+              註冊
+            </button>
+            <span class="divider">|</span>
+            <button 
+              class="text-btn" 
+              :class="{ active: activePage === 'login' }"
+              @click="emit('changePage', 'login')"
+            >
+              登入
+            </button>
+          </template>
+
+          <template v-else>
+            <button 
+              class="text-btn user-name-btn" 
+              :class="{ active: activePage === 'user' }"
+              @click="emit('changePage', 'user')"
+              title="查看個人資料"
+            >
+              👤 {{ userName }}
+            </button>
+            <span class="divider">|</span>
+            <button class="text-btn logout-btn" @click="handleLogout">
+              登出
+            </button>
+          </template>
+
         </div>
       </div>
 
@@ -142,7 +212,8 @@ const accommodations = [
 </template>
 
 <style scoped>
-/* (保留原本的所有 CSS，只新增 user-auth 相關的) */
+/* (原本的 CSS 保持不變，下面是新增或修改的) */
+
 .navbar {
   background-color: var(--nav-bg);
   box-shadow: 0 2px 10px var(--shadow-color);
@@ -197,7 +268,7 @@ const accommodations = [
 }
 .add-btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
-/* ⭐ 新增：使用者登入/註冊區塊樣式 */
+/* --- Auth 區塊樣式 --- */
 .user-auth {
   display: flex;
   align-items: center;
@@ -212,8 +283,9 @@ const accommodations = [
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 14px;
-  padding: 5px;
+  padding: 5px 8px; /* 增加一點點點擊範圍 */
   transition: color 0.2s;
+  border-radius: 4px;
 }
 
 .text-btn:hover {
@@ -221,7 +293,22 @@ const accommodations = [
   font-weight: bold;
 }
 
+/* 當下頁面是 active 時的樣式 */
+.text-btn.active {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
 .divider {
   color: var(--border-color);
+}
+
+.user-name-btn {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  color: #e74c3c; /* 登出按鈕 hover 變紅色，表示警告 */
 }
 </style>

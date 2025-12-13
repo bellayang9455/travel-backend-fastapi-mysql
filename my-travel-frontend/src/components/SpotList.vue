@@ -2,56 +2,69 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 
+// --- 狀態變數 ---
 const spots = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
-const sortBy = ref('newest') // ⭐ 新增：排序狀態 (預設最新)
+const sortBy = ref('newest') // 預設排序：最新
 
+// --- 產生隨機圖片網址 (使用 id 當種子) ---
 const getImageUrl = (id) => {
   return `https://picsum.photos/seed/${id}/400/300`
 }
 
-// ⭐ 新增：排序邏輯
+// --- 計算屬性：處理排序邏輯 ---
 const sortedSpots = computed(() => {
-  // 複製一份陣列以免改到原始資料
+  // 1. 複製一份陣列，避免直接修改原始資料 (Vue 最佳實踐)
   const list = [...spots.value]
   
+  // 2. 根據 sortBy 的值進行排序
   if (sortBy.value === 'newest') {
-    // 假設 id 越大越新，或是之後有 created_at 可以改用日期排
+    // 假設後端回傳預設是舊到新 (id 小到大)，反轉就是最新
+    // 如果後端有 created_at 欄位，建議改用日期排序會更準確
     return list.reverse() 
   } else if (sortBy.value === 'oldest') {
-    return list // 預設就是舊到新
+    return list // 原始順序
   } else if (sortBy.value === 'name_asc') {
-    return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')) // 中文筆畫排序
+    // 中文筆畫排序 (localeCompare)
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')) 
   }
   
   return list
 })
 
+// --- 抓取資料 ---
 const fetchSpots = async () => {
   loading.value = true
   errorMessage.value = ''
+  
   try {
+    // 呼叫後端 API
     const response = await axios.get('http://127.0.0.1:8000/spots')
     spots.value = response.data
     
+    // 如果資料庫是空的
     if (spots.value.length === 0) {
-      errorMessage.value = '📭 資料庫目前沒有任何景點資料，請先新增！'
+      errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
     }
   } catch (error) {
     console.error("抓不到資料:", error)
+    
+    // 判斷錯誤類型，給予使用者友善的提示
     if (error.code === 'ERR_NETWORK') {
-      errorMessage.value = '❌ 無法連線到後端伺服器！請確認後端是否開啟。'
+      errorMessage.value = '❌ 無法連線到後端伺服器！請確認終端機是否已執行 uvicorn。'
     } else if (error.response && error.response.status === 404) {
       errorMessage.value = '❌ 找不到 API 路徑 (404)！'
     } else {
-      errorMessage.value = `❌ 發生錯誤：${error.message}`
+      errorMessage.value = `❌ 發生未預期的錯誤：${error.message}`
     }
   } finally {
+    // 無論成功失敗，最後都要關閉載入動畫
     loading.value = false
   }
 }
 
+// --- 生命週期：元件掛載時自動抓取 ---
 onMounted(() => {
   fetchSpots()
 })
@@ -63,10 +76,9 @@ onMounted(() => {
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
-        <span class="count" v-if="!errorMessage">共 {{ spots.length }} 個景點</span>
+        <span class="count" v-if="!errorMessage && !loading">共 {{ spots.length }} 個景點</span>
       </div>
       
-      <!-- ⭐ 新增：排序控制項 -->
       <div class="header-right" v-if="!loading && !errorMessage">
         <select v-model="sortBy" class="sort-select">
           <option value="newest">🕒 最新建立</option>
@@ -77,7 +89,7 @@ onMounted(() => {
     </div>
 
     <div v-if="loading" class="state-box loading">
-      <span class="spinner">⏳</span> 正在讀取資料庫...
+      <span class="spinner">⏳</span> 正在讀取資料...
     </div>
 
     <div v-else-if="errorMessage" class="state-box error">
@@ -85,14 +97,13 @@ onMounted(() => {
       <button @click="fetchSpots" class="retry-btn">🔄 再試一次</button>
     </div>
 
-    <!-- ⭐ 修改：使用 sortedSpots 進行迴圈 -->
     <div v-else class="grid-layout">
       <div v-for="spot in sortedSpots" :key="spot.id" class="card">
         
         <div class="image-box">
           <img :src="getImageUrl(spot.id)" alt="景點圖片">
           <span class="category-tag">{{ spot.category || '未分類' }}</span>
-          <span class="location-tag">📍 {{ spot.location }}</span>
+          <span class="location-tag" v-if="spot.location">📍 {{ spot.location }}</span>
         </div>
 
         <div class="card-body">
@@ -120,6 +131,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -130,79 +142,80 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* Header 排版調整 */
+/* Header 排版 */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color, #eee);
   padding-bottom: 15px;
-  flex-wrap: wrap; /* 手機版自動換行 */
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.header-left h2 { margin: 0; color: var(--text-color); display: inline-block; margin-right: 10px;}
-.count { color: var(--text-secondary); font-size: 0.9rem; }
+.header-left h2 { margin: 0; color: var(--text-color, #333); display: inline-block; margin-right: 10px;}
+.count { color: var(--text-secondary, #666); font-size: 0.9rem; }
 
-/* 排序選單樣式 */
+/* 排序選單 */
 .sort-select {
   padding: 8px 12px;
   border-radius: 20px;
-  border: 1px solid var(--input-border);
-  background-color: var(--card-bg);
-  color: var(--text-color);
+  border: 1px solid var(--input-border, #ddd);
+  background-color: var(--card-bg, #fff);
+  color: var(--text-color, #333);
   font-size: 0.9rem;
   cursor: pointer;
   outline: none;
 }
-.sort-select:hover { border-color: var(--primary-color); }
+.sort-select:hover { border-color: var(--primary-color, #4CAF50); }
 
-/* 狀態訊息樣式 */
+/* 狀態訊息 (Loading / Error) */
 .state-box {
   text-align: center;
   padding: 40px;
-  background-color: var(--card-bg);
+  background-color: var(--card-bg, #fff);
   border-radius: 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color, #eee);
   margin-top: 20px;
 }
 
-.loading { color: var(--text-secondary); font-size: 1.2rem; }
+.loading { color: var(--text-secondary, #666); font-size: 1.2rem; }
 .spinner { display: inline-block; animation: spin 2s linear infinite; margin-right: 10px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 .error { color: #e74c3c; background-color: #fff2f0; border-color: #ffccc7; }
 .retry-btn {
-  margin-top: 15px; padding: 8px 16px; background-color: var(--primary-color);
+  margin-top: 15px; padding: 8px 16px; background-color: var(--primary-color, #4CAF50);
   color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem;
 }
 .retry-btn:hover { opacity: 0.9; }
 
-/* 網格排版 */
+/* 網格系統 RWD */
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(4, 1fr); 
   gap: 20px;
 }
-
 @media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .grid-layout { grid-template-columns: repeat(1, 1fr); } }
 
 /* 卡片樣式 */
 .card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #eee);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 8px var(--shadow-color);
+  box-shadow: 0 4px 8px var(--shadow-color, rgba(0,0,0,0.05));
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
+  display: flex;
+  flex-direction: column; /* 讓內容上下排列 */
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px var(--shadow-color);
+  box-shadow: 0 8px 16px var(--shadow-color, rgba(0,0,0,0.1));
 }
 
 .image-box { position: relative; height: 160px; overflow: hidden; }
@@ -211,7 +224,7 @@ onMounted(() => {
 
 .category-tag {
   position: absolute; top: 10px; left: 10px;
-  background: rgba(255, 255, 255, 0.9); color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.9); color: var(--primary-color, #4CAF50);
   font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 20px;
 }
 .location-tag {
@@ -220,20 +233,21 @@ onMounted(() => {
   font-size: 12px; padding: 4px 8px; border-radius: 4px;
 }
 
-.card-body { padding: 15px; }
+.card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
 .card-body h3 {
-  margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-color);
+  margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-color, #333);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.info-row { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+.info-row { font-size: 12px; color: var(--text-secondary, #666); margin-bottom: 10px; }
 .tags-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
 .feature-tag {
-  background: var(--input-bg); color: var(--primary-color);
-  border: 1px solid var(--border-color); font-size: 11px; padding: 2px 6px; border-radius: 4px;
+  background: var(--input-bg, #f9f9f9); color: var(--primary-color, #4CAF50);
+  border: 1px solid var(--border-color, #eee); font-size: 11px; padding: 2px 6px; border-radius: 4px;
 }
 .footer {
-  border-top: 1px solid var(--border-color); padding-top: 10px;
-  font-size: 12px; color: var(--text-secondary);
+  margin-top: auto; /* 將 footer 推到底部 */
+  border-top: 1px solid var(--border-color, #eee); padding-top: 10px;
+  font-size: 12px; color: var(--text-secondary, #666);
 }
-.label { font-weight: bold; color: var(--text-color); }
+.label { font-weight: bold; color: var(--text-color, #333); }
 </style>

@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..models import User  # Assuming the User model is in .models
 from ..database import get_db  # Assuming you have a get_db dependency
-from ..schemas import UserResponse, UserUpdate # Assuming Pydantic models are in .schemas
+from ..schemas import UserOut, UserUpdate # Assuming Pydantic models are in .schemas
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 # 1. GET User by ID
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=UserOut)
 def get_user(user_id: str, db: Session = Depends(get_db)):
     """Retrieves a specific user by their ID."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -16,7 +16,7 @@ def get_user(user_id: str, db: Session = Depends(get_db)):
     return user
 
 # 2. PUT (Update) User
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put("/{user_id}", response_model=UserOut)
 def update_user(user_id: str, user_update: UserUpdate, db: Session = Depends(get_db)):
     """Updates user information."""
     user = db.query(User).filter(User.id == user_id).first()

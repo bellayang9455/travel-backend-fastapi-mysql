@@ -3,8 +3,9 @@ import { ref, onMounted, watch } from 'vue'
 import SpotForm from './components/SpotForm.vue'
 import SpotList from './components/SpotList.vue'
 import Navbar from './components/Navbar.vue'
-import RegisterForm from './components/RegisterForm.vue' // 引入註冊組件
-import User from './components/User.vue'
+import RegisterForm from './components/RegisterForm.vue'
+import Login from './components/Login.vue' // Login 元件
+import User from './components/User.vue'   // User 元件
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
@@ -21,7 +22,6 @@ const handleFilter = (location) => {
 // 切換主題模式
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
-  // 儲存設定到瀏覽器
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
 }
 
@@ -31,9 +31,15 @@ onMounted(() => {
   if (savedTheme === 'dark') {
     isDarkMode.value = true
   }
+  
+  // 如果使用者在 localStorage 裡有 token，代表登入過，可以直接顯示 user 頁 (選用)
+  /*
+  if (localStorage.getItem('token')) {
+    currentPage.value = 'user'
+  }
+  */
 })
 
-// 監聽模式改變，同步修改 body 背景色
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
@@ -42,7 +48,6 @@ watch(isDarkMode, (newVal) => {
 <template>
   <div class="app-wrapper" :class="{'dark-mode': isDarkMode }">
     
-    <!-- 導覽列 -->
     <Navbar 
       :activePage="currentPage" 
       :isDarkMode="isDarkMode"
@@ -51,27 +56,33 @@ watch(isDarkMode, (newVal) => {
       @toggleTheme="toggleTheme"
     />
 
-    <!-- 內容區域 -->
     <main class="content-area">
       
-      <!-- 首頁內容 -->
       <div v-if="currentPage === 'home'">
         <div class="hero-header">
           <h2>探索世界之美</h2>
           <p>紀錄每一個感動的瞬間</p>
         </div>
-        
         <SpotList />
       </div>
 
-      <!-- 新增頁面內容 -->
       <div v-if="currentPage === 'add'">
-        <SpotForm />
+        <SpotForm @submitSuccess="switchPage('home')" />
       </div>
 
-      <!-- ⭐ 2. 註冊頁面內容 -->
       <div v-if="currentPage === 'register'">
-        <RegisterForm />
+        <RegisterForm 
+          @registerSuccess="switchPage('registerSuccess')" 
+          @changePage="switchPage" 
+        />
+      </div>
+
+      <div v-if="currentPage === 'login'">
+        <Login @loginSuccess="switchPage('user')" />
+      </div>
+
+      <div v-if="currentPage === 'user'">
+        <User />
       </div>
 
     </main>
@@ -79,9 +90,8 @@ watch(isDarkMode, (newVal) => {
 </template>
 
 <style>
-/* CSS 保持原樣，不需要變動 */
+/* 您的 CSS 樣式保持不變 */
 :root {
-  /* 白天模式 (預設) */
   --bg-color: #fafafa;
   --text-color: #2c3e50;
   --text-secondary: #666;
@@ -95,18 +105,17 @@ watch(isDarkMode, (newVal) => {
   --link-color: #333;
 }
 
-/* 深色模式 */
 .dark-mode {
-  --bg-color: #121212;         /* 極深灰背景 */
-  --text-color: #e0e0e0;       /* 淺灰文字 */
-  --text-secondary: #aaa;      /* 次要文字 */
-  --card-bg: #1e1e1e;          /* 卡片深灰 */
-  --border-color: #333;        /* 深色邊框 */
-  --nav-bg: #1e1e1e;           /* 導覽列深灰 */
-  --input-bg: #2d2d2d;         /* 輸入框背景 */
-  --input-border: #444;        /* 輸入框邊框 */
-  --shadow-color: rgba(0,0,0,0.5); /* 深色陰影 */
-  --primary-color: #66bb6a;    /* 綠色亮一點 */
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --text-secondary: #aaa;
+  --card-bg: #1e1e1e;
+  --border-color: #333;
+  --nav-bg: #1e1e1e;
+  --input-bg: #2d2d2d;
+  --input-border: #444;
+  --shadow-color: rgba(0,0,0,0.5);
+  --primary-color: #66bb6a;
   --link-color: #e0e0e0;
 }
 
