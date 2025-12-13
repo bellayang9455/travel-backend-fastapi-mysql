@@ -67,8 +67,9 @@ class Spot(Base):
 class ItinerarySpot(Base):
     __tablename__ = "itinerary_spots"
 
-    itinerary_id: Mapped[str] = mapped_column(String(36), ForeignKey("itineraries.id"), primary_key=True)
-    spot_id: Mapped[str] = mapped_column(String(36), ForeignKey("spots.id"), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    itinerary_id: Mapped[str] = mapped_column(String(36), ForeignKey("itineraries.id"), nullable=False)
+    spot_id: Mapped[str] = mapped_column(String(36), ForeignKey("spots.id"), nullable=False)
     day_order: Mapped[int | None] = mapped_column(Integer)
     note: Mapped[str | None] = mapped_column(String(255))
 
