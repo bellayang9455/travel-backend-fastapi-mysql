@@ -217,3 +217,20 @@ def delete_itinerary_item(item_id: int, db: Session = Depends(get_db)):
         db.delete(item)
         db.commit()
     return {"message": "Deleted"}
+
+# 8. [刪除行程] 刪除整本行程 (包含裡面的所有景點紀錄)
+@router.delete("/{itinerary_id}")
+def delete_itinerary(itinerary_id: str, db: Session = Depends(get_db)):
+    # 1. 找到行程
+    itinerary = db.query(models.Itinerary).filter(models.Itinerary.id == itinerary_id).first()
+    
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="行程不存在")
+    
+    # 2. 刪除
+    # 由於 models.py 裡設定了 cascade="all, delete-orphan"
+    # SQLAlchemy 會自動幫您把關聯的 itinerary_spots 也刪掉，不用手動刪
+    db.delete(itinerary)
+    db.commit()
+    
+    return {"message": "行程已完整刪除"}
