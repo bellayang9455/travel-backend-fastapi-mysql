@@ -1,61 +1,80 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, watch, computed } from 'vue';
 import axios from 'axios';
+// 引入拖曳套件
+import draggable from 'vuedraggable';
+// 引入國碼資料
+import rawCountries from '../assets/countries_number.json'; 
 
-// 定義事件，讓 User.vue 可以通知 App.vue 換頁
+// --- 資料預處理 (保留您原本的邏輯) ---
+const countryCodes = rawCountries.map(item => {
+    // 從 "台灣 (+886)" 裡面抓出 "+886"
+    const match = item.name.match(/\((.+?)\)/);
+    return {
+        label: item.name,          // 顯示名稱："台灣 (+886)"
+        code: match ? match[1] : '' // 國碼："+886"
+    };
+}).filter(item => item.code);
+
+// 定義事件與接收 Props
 const emit = defineEmits(['changePage'])
+const props = defineProps({
+  user: Object
+})
 
 // --- 設定區 ---
-const userId = localStorage.getItem('userId'); 
 const API_URL = "http://localhost:8000"; 
 
-// --- 常用國碼列表 ---
-const countryCodes = [
-  { code: '+886', label: '台灣 (+886)' },
-  { code: '+86', label: '中國 (+86)' },
-  { code: '+852', label: '香港 (+852)' },
-  { code: '+81', label: '日本 (+81)' },
-  { code: '+82', label: '韓國 (+82)' },
-  { code: '+1', label: '美國 (+1)' },
-  { code: '+44', label: '英國 (+44)' },
-  { code: '+61', label: '澳洲 (+61)' },
-  { code: '+65', label: '新加坡 (+65)' },
-  { code: '+33', label: '法國 (+33)' },
-  { code: '+49', label: '德國 (+49)' },
-]
-
-// --- 狀態變數 ---
-const user = ref(null);
+// --- 狀態變數：使用者 ---
+const localUser = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const isEditing = ref(false);
 
+// --- 狀態變數：行程 ---
+const itineraries = ref([]);
+const activeItinerary = ref(null);
+const isCreatingItinerary = ref(false); // 控制新增行程表單開關
+
+const currentUserId = computed(() => props.user ? props.user.id : null);
+
 const formData = reactive({
   name: '',
-  phonePrefix: '+886', // 新增：國碼
-  phoneNumber: '',     // 新增：電話號碼 (不含國碼)
+  phonePrefix: '+886', 
+  phoneNumber: '',     
   birthday: '',
   likes: {}
 });
 
-// --- 方法 ---
+const newItineraryForm = reactive({
+    title: '',
+    budget: 0,
+    travel_time: '',
+    lodging: '',
+    transport: ''
+});
 
+// --- 方法：使用者資料 ---
 const fetchUser = async () => {
-  if (!userId) {
-    alert("您尚未登入，請先登入！");
-    emit('changePage', 'login'); 
+  if (!currentUserId.value) {
+    error.value = "您尚未登入，請先登入！";
     return;
   }
 
   try {
     loading.value = true;
     error.value = null;
-    const response = await axios.get(`${API_URL}/users/${userId}`);
-    user.value = response.data;
+    
+    // 1. 抓取個人資料
+    const response = await axios.get(`${API_URL}/users/${currentUserId.value}`);
+    localUser.value = response.data;
+
+    // 2. 抓取行程列表
+    await fetchItineraries();
+
   } catch (err) {
     console.error(err);
     error.value = "無法取得資料，請確認後端是否啟動。";
-    
     if (err.response && (err.response.status === 404 || err.response.status === 401)) {
         localStorage.clear();
         alert("登入已過期，請重新登入");
@@ -66,55 +85,143 @@ const fetchUser = async () => {
   }
 };
 
+// --- 方法：行程管理 ---
+const fetchItineraries = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/itineraries/user/${currentUserId.value}`);
+        itineraries.value = res.data;
+        
+        // 如果目前有選中的行程，重新整理它的資料 (例如剛刪除景點後)
+        if (activeItinerary.value) {
+            const found = itineraries.value.find(i => i.id === activeItinerary.value.id);
+            if (found) {
+                activeItinerary.value = found;
+            } else {
+                activeItinerary.value = null; // 如果行程被刪了，清空選取
+            }
+        }
+    } catch (e) {
+        console.error("抓取行程失敗", e);
+    }
+};
+
+const createItinerary = async () => {
+    if (!newItineraryForm.title) return alert("請輸入行程名稱");
+    
+    try {
+        const payload = {
+            ...newItineraryForm,
+            owner_user_id: currentUserId.value
+        };
+        await axios.post(`${API_URL}/itineraries/`, payload);
+        
+        alert("行程建立成功！");
+        isCreatingItinerary.value = false;
+        // 重置表單
+        Object.assign(newItineraryForm, { title: '', budget: 0, travel_time: '', lodging: '', transport: '' });
+        // 重新抓取列表
+        await fetchItineraries();
+    } catch (e) {
+        alert("建立失敗：" + (e.response?.data?.detail || e.message));
+    }
+};
+
+const deleteItinerary = async (id) => {
+    if (!confirm("確定要刪除此行程嗎？(無法復原)")) return;
+    try {
+        await axios.delete(`${API_URL}/itineraries/${id}`);
+        await fetchItineraries();
+    } catch (e) {
+        alert("刪除失敗");
+    }
+};
+
+const deleteSpotFromItinerary = async (itemId) => {
+    if (!confirm("確定要從行程移除此景點嗎？")) return;
+    try {
+        await axios.delete(`${API_URL}/itineraries/item/${itemId}`);
+        await fetchItineraries(); 
+    } catch (e) {
+        alert("移除失敗");
+    }
+};
+
+const selectItinerary = (itin) => {
+    activeItinerary.value = itin;
+};
+
+// 拖曳結束後，更新排序到後端
+const onDragEnd = async () => {
+    if (!activeItinerary.value) return;
+    
+    const payload = activeItinerary.value.spots.map((item, index) => ({
+        item_id: item.id,
+        new_order: index
+    }));
+
+    try {
+        await axios.post(`${API_URL}/itineraries/${activeItinerary.value.id}/reorder`, payload);
+        console.log("排序更新成功");
+    } catch (e) {
+        console.error("排序更新失敗", e);
+    }
+};
+
+const getImageUrl = (id) => `https://picsum.photos/seed/${id}/200/150`; // 假圖
+
+// --- Watch ---
+watch(() => props.user, (newVal) => {
+  if(newVal && newVal.id) {
+    fetchUser();
+  } else {
+    localUser.value = null;
+    itineraries.value = [];
+    loading.value = false;
+  } 
+}, { immediate: true });
+
+// --- 編輯個人資料邏輯 (保留原樣) ---
 const startEditing = () => {
-  formData.name = user.value.name;
+  if (!localUser.value) {
+    console.error("無法編輯，使用者尚未載入");
+    return;
+  }
+  formData.name = localUser.value.name;
   
-  // --- 處理電話號碼拆解邏輯 ---
-  // 假設資料庫存的是 "+886912345678" 或純號碼 "0912345678"
-  const fullPhone = user.value.phone || '';
-  
-  // 嘗試比對是否包含已知國碼
+  const fullPhone = localUser.value.phone || '';
   const foundCode = countryCodes.find(c => fullPhone.startsWith(c.code));
   
   if (foundCode) {
     formData.phonePrefix = foundCode.code;
     formData.phoneNumber = fullPhone.replace(foundCode.code, '');
   } else {
-    // 如果沒找到對應國碼 (或是舊資料沒有 +號)，預設給 +886，並保留原字串
     formData.phonePrefix = '+886';
     formData.phoneNumber = fullPhone;
   }
 
-  // --- 處理生日 ---
-  if (user.value.birthday) {
-    formData.birthday = user.value.birthday.split('T')[0];
+  if (localUser.value.birthday) {
+    formData.birthday = localUser.value.birthday.split('T')[0];
   } else {
     formData.birthday = '';
   }
   
-  formData.likes = user.value.likes ? JSON.parse(JSON.stringify(user.value.likes)) : {};
+  formData.likes = localUser.value.likes ? JSON.parse(JSON.stringify(localUser.value.likes)) : {};
   isEditing.value = true;
 };
 
-const cancelEdit = () => {
-  isEditing.value = false;
-};
+const cancelEdit = () => { isEditing.value = false; };
 
 const saveUser = async () => {
   try {
-    // 組合國碼與電話
     const fullPhone = `${formData.phonePrefix}${formData.phoneNumber}`;
-
     const payload = {
       name: formData.name,
-      phone: fullPhone, // 這裡送出完整的號碼
+      phone: fullPhone, 
       birthday: formData.birthday ? new Date(formData.birthday).toISOString() : null,
       likes: formData.likes
     };
-
-    const response = await axios.put(`${API_URL}/users/${userId}`, payload);
-    
-    user.value = response.data;
+    const response = await axios.put(`${API_URL}/users/${currentUserId.value}`, payload);
+    localUser.value = response.data;
     isEditing.value = false;
     alert("更新成功！");
   } catch (err) {
@@ -127,201 +234,204 @@ const formatDate = (dateString) => {
   if (!dateString) return '未設定';
   return new Date(dateString).toLocaleDateString();
 };
-
-onMounted(() => {
-  fetchUser();
-});
 </script>
 
 <template>
-  <div class="user-profile-container">
-    <h1>個人資料</h1>
+  <div class="user-page-container">
+    
     <div v-if="loading" class="loading">資料載入中...</div>
     <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="!loading && !localUser && !error" class="error">請先登入。</div>
 
-    <div v-if="!loading && user" class="profile-card">
-      <div v-if="!isEditing">
-        <div class="info-group"><label>Email：</label><span>{{ user.email }}</span></div>
-        <div class="info-group"><label>姓名：</label><span>{{ user.name || '未設定' }}</span></div>
-        <div class="info-group"><label>電話：</label><span>{{ user.phone || '未設定' }}</span></div>
-        <div class="info-group"><label>生日：</label><span>{{ formatDate(user.birthday) }}</span></div>
-        <div class="info-group">
-          <label>喜好：</label>
-          <div class="tags">
-            <span v-for="(value, key) in user.likes" :key="key" class="tag">{{ key }}: {{ value }}</span>
-          </div>
-        </div>
-        <button @click="startEditing" class="btn-primary">編輯資料</button>
-      </div>
-
-      <div v-else class="edit-form">
-        <div class="form-group"><label>姓名</label><input v-model="formData.name" type="text" /></div>
+    <div v-if="!loading && localUser" class="grid-layout">
         
-        <div class="form-group">
-          <label>電話</label>
-          <div class="phone-input-group">
-            <select v-model="formData.phonePrefix" class="phone-select">
-              <option v-for="c in countryCodes" :key="c.code" :value="c.code">
-                {{ c.label }}
-              </option>
-            </select>
-            <input v-model="formData.phoneNumber" type="text" placeholder="請輸入號碼" class="phone-input" />
-          </div>
+        <div class="profile-section">
+            <div class="profile-card">
+                <h2>👤 個人資料</h2>
+                <div v-if="!isEditing">
+                    <div class="info-group"><label>Email：</label><span>{{ localUser.email }}</span></div>
+                    <div class="info-group"><label>姓名：</label><span>{{ localUser.name || '未設定' }}</span></div>
+                    <div class="info-group"><label>電話：</label><span>{{ localUser.phone || '未設定' }}</span></div>
+                    <div class="info-group"><label>生日：</label><span>{{ formatDate(localUser.birthday) }}</span></div>
+                    
+                    <div class="info-group">
+                        <label>喜好：</label>
+                        <div class="tags">
+                            <span v-for="(value, key) in localUser.likes" :key="key" class="tag">{{ key }}: {{ value }}</span>
+                        </div>
+                    </div>
+                    <button @click="startEditing" class="btn-primary">編輯資料</button>
+                </div>
+
+                <div v-else class="edit-form">
+                    <div class="form-group"><label>姓名</label><input v-model="formData.name" type="text" /></div>
+                    <div class="form-group">
+                        <label>電話</label>
+                        <div class="phone-input-group">
+                            <select v-model="formData.phonePrefix" class="phone-select">
+                                <option v-for="c in countryCodes" :key="c.code" :value="c.code">
+                                    {{ c.label }}
+                                </option>
+                            </select>
+                            <input v-model="formData.phoneNumber" type="text" placeholder="請輸入號碼" class="phone-input" />
+                        </div>
+                    </div>
+                    <div class="form-group"><label>生日</label><input v-model="formData.birthday" type="date" /></div>
+                    <div class="form-group"><label>喜好 (Food)</label><input v-model="formData.likes.food" type="text" /></div>
+                    
+                    <div class="button-group">
+                        <button @click="saveUser" class="btn-save">儲存</button>
+                        <button @click="cancelEdit" class="btn-cancel">取消</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group"><label>生日</label><input v-model="formData.birthday" type="date" /></div>
-        <div class="form-group"><label>喜好 (Food)</label><input v-model="formData.likes.food" type="text" /></div>
-        
-        <div class="button-group">
-          <button @click="saveUser" class="btn-save">儲存</button>
-          <button @click="cancelEdit" class="btn-cancel">取消</button>
+        <div class="itinerary-section">
+            
+            <div class="itin-header">
+                <h2>🗓️ 我的行程 ({{ itineraries.length }})</h2>
+                <button @click="isCreatingItinerary = !isCreatingItinerary" class="btn-add-itin">
+                    {{ isCreatingItinerary ? '取消新增' : '+ 建立新行程' }}
+                </button>
+            </div>
+
+            <div v-if="isCreatingItinerary" class="card create-itin-card">
+                <h3>✨ 規劃新的旅程</h3>
+                <div class="form-grid">
+                    <div><label>行程名稱 *</label><input v-model="newItineraryForm.title" placeholder="例如：東京五日遊" /></div>
+                    <div><label>預算 (TWD)</label><input type="number" v-model="newItineraryForm.budget" /></div>
+                    <div><label>預計時間</label><input v-model="newItineraryForm.travel_time" placeholder="例如：2023/12/25" /></div>
+                    <div><label>住宿安排</label><input v-model="newItineraryForm.lodging" /></div>
+                    <div><label>交通方式</label><input v-model="newItineraryForm.transport" /></div>
+                </div>
+                <button @click="createItinerary" class="btn-submit-itin">建立行程</button>
+            </div>
+
+            <div class="itin-list">
+                <div v-for="itin in itineraries" :key="itin.id" 
+                     class="itin-card" 
+                     :class="{ active: activeItinerary && activeItinerary.id === itin.id }"
+                     @click="selectItinerary(itin)">
+                    <div class="itin-info">
+                        <h4>{{ itin.title }}</h4>
+                        <span class="badge">{{ itin.spots ? itin.spots.length : 0 }} 個景點</span>
+                    </div>
+                    <button @click.stop="deleteItinerary(itin.id)" class="btn-delete-itin">🗑️</button>
+                </div>
+                <div v-if="itineraries.length === 0" class="empty-hint">尚未建立行程</div>
+            </div>
+
+            <hr class="divider">
+
+            <div v-if="activeItinerary" class="itin-detail">
+                <h3>
+                    📍 {{ activeItinerary.title }} - 景點規劃
+                    <small style="font-size:0.9rem; color:var(--text-secondary)"> (預算: ${{ activeItinerary.budget }})</small>
+                </h3>
+                
+                <draggable 
+                    v-model="activeItinerary.spots" 
+                    item-key="id" 
+                    @end="onDragEnd"
+                    class="drag-area"
+                >
+                    <template #item="{ element }">
+                        <div class="spot-item">
+                            <div class="drag-handle">☰</div>
+                            <img :src="getImageUrl(element.spot.id)" class="spot-thumb">
+                            <div class="spot-content">
+                                <strong>{{ element.spot.name }}</strong>
+                                <p>{{ element.spot.location }} | {{ element.spot.category }}</p>
+                            </div>
+                            <button @click="deleteSpotFromItinerary(element.id)" class="btn-remove-spot">✕</button>
+                        </div>
+                    </template>
+                </draggable>
+
+                <div v-if="(!activeItinerary.spots || activeItinerary.spots.length === 0)" class="empty-spots">
+                    此行程還沒有景點，請去首頁加入！
+                </div>
+            </div>
+            <div v-else class="no-selection">
+                請點選上方行程以查看詳情
+            </div>
+
         </div>
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.user-profile-container {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 20px;
-  font-family: '微軟正黑體', Arial, sans-serif;
-  color: var(--text-color); 
+/* 版面配置 */
+.user-page-container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; color: var(--text-color); }
+.grid-layout { display: grid; grid-template-columns: 350px 1fr; gap: 30px; align-items: start; }
+@media(max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+
+/* 通用卡片樣式 */
+.profile-card, .card, .itin-card, .create-itin-card { 
+    background: var(--card-bg); padding: 25px; border-radius: 16px; 
+    border: 1px solid var(--border-color); box-shadow: 0 4px 10px var(--shadow-color); 
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: var(--text-color); 
-}
+/* 左欄：個人資料表單 */
+.info-group, .form-group { margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--text-secondary); }
+span { color: var(--text-color); font-size: 1.1rem; }
+input, select { width: 100%; padding: 10px; border: 1px solid var(--input-border); border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); transition: all 0.3s; box-sizing: border-box; }
+input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1); }
+.phone-input-group { display: flex; gap: 10px; }
+.phone-select { width: 35%; flex-shrink: 0; }
+.phone-input { flex-grow: 1; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { background-color: var(--input-bg); color: var(--primary-color); padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid var(--border-color); }
 
-.profile-card {
-  background: var(--card-bg); 
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 10px var(--shadow-color); 
-  border: 1px solid var(--border-color); 
-}
+/* 按鈕樣式 */
+.btn-primary, .btn-save, .btn-cancel, .btn-submit-itin { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-save { background: #2ecc71; color: white; }
+.btn-cancel { background: #e74c3c; color: white; }
+.button-group { display: flex; gap: 10px; }
 
-.info-group, .form-group {
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color); 
-  padding-bottom: 10px;
-}
+/* 右欄：行程管理 */
+.itin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.btn-add-itin { background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+.btn-submit-itin { margin-top: 20px; }
 
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: var(--text-secondary); 
+/* 行程列表 */
+.itin-list { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+.itin-card { 
+    min-width: 200px; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    background: var(--input-bg); transition: all 0.2s;
 }
+.itin-card:hover { transform: translateY(-3px); }
+.itin-card.active { border-color: var(--primary-color); background: rgba(76, 175, 80, 0.1); }
+.itin-info h4 { margin: 0 0 5px 0; color: var(--text-color); }
+.badge { background: #666; color: white; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; }
+.btn-delete-itin { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #aaa; }
+.btn-delete-itin:hover { color: #e74c3c; }
 
-span {
-  color: var(--text-color); 
-  font-size: 1.1rem;
-}
+/* 新增行程表單 */
+.create-itin-card { margin-bottom: 20px; background: var(--input-bg); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-input, select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--input-border); 
-  border-radius: 6px;
-  box-sizing: border-box;
-  background-color: var(--input-bg); 
-  color: var(--text-color); 
-  transition: all 0.3s;
+/* 行程詳情 (拖曳區) */
+.drag-area { margin-top: 15px; }
+.spot-item { 
+    display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border-color);
+    padding: 10px; margin-bottom: 10px; border-radius: 8px; transition: background 0.2s;
 }
+.spot-item:hover { background: var(--input-bg); }
+.drag-handle { cursor: grab; padding: 0 10px; font-size: 1.5rem; color: #888; }
+.spot-thumb { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 15px; }
+.spot-content { flex: 1; }
+.spot-content strong { color: var(--text-color); }
+.spot-content p { margin: 3px 0 0; font-size: 0.9rem; color: var(--text-secondary); }
+.btn-remove-spot { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem; }
+.btn-remove-spot:hover { color: #e74c3c; }
 
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-/* ⭐ 新增：電話輸入框組合樣式 */
-.phone-input-group {
-  display: flex;
-  gap: 10px; /* 國碼和號碼中間的間距 */
-}
-
-.phone-select {
-  width: 35%; /* 國碼選單寬度 */
-  flex-shrink: 0;
-}
-
-.phone-input {
-  flex-grow: 1; /* 號碼欄位佔滿剩餘空間 */
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag {
-  background-color: var(--input-bg); 
-  color: var(--primary-color);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  border: 1px solid var(--border-color);
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: opacity 0.3s;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-}
-
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn-save {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  flex: 1;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.btn-cancel {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  flex: 1;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.loading, .error {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-}
-
-.error {
-  color: #e74c3c;
-}
+.divider { border: 0; height: 1px; background: var(--border-color); margin: 20px 0; }
+.empty-hint, .no-selection, .empty-spots { text-align: center; color: var(--text-secondary); padding: 30px; border: 2px dashed var(--border-color); border-radius: 12px; }
+.loading, .error { text-align: center; margin-top: 50px; font-size: 1.2rem; color: var(--text-secondary); }
+.error { color: #e74c3c; }
 </style>

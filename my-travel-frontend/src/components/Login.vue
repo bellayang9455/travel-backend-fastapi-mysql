@@ -23,7 +23,6 @@ const handleLogin = async () => {
     isLoading.value = true
     
     // 2. 呼叫後端 API
-    // ⚠️ 注意：這需要您的後端已經完成 auth.py 並且有 /login 路由
     const response = await axios.post('http://localhost:8000/login', {
       email: loginData.value.email,
       password: loginData.value.password
@@ -34,9 +33,17 @@ const handleLogin = async () => {
 
     // 4. [關鍵] 將 userId 存入 localStorage
     // 這樣 User.vue 就能讀取到這個 ID，不用再寫死了
+    const userObject = {
+      id: user_id,
+      name: user_name,
+      token: loginData.value.email
+    }
+
     localStorage.setItem('token', access_token)
-    localStorage.setItem('userId', user_id)
-    localStorage.setItem('userName', user_name)
+    localStorage.setItem('user', JSON.stringify(userObject))
+
+    localStorage.removeItem('userId') 
+    localStorage.removeItem('userName')
 
     alert(`🎉 歡迎回來，${user_name}！`)
     
@@ -46,17 +53,6 @@ const handleLogin = async () => {
   } catch (error) {
     console.error(error)
     
-    // --- 測試用的假登入 (如果您後端還沒做好登入功能，可以暫時打開下面這段) ---
-    /*
-    if (loginData.value.email === "test") {
-       // 模擬成功，手動填入一個您資料庫裡有的 ID
-       localStorage.setItem('userId', '請貼上您資料庫裡的UUID') 
-       emit('loginSuccess')
-       return
-    }
-    */
-    // -----------------------------------------------------------
-
     if (error.response && error.response.status === 400) {
       alert('❌ 登入失敗：帳號或密碼錯誤')
     } else {

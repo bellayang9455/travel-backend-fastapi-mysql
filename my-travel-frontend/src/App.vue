@@ -9,6 +9,7 @@ import User from './components/User.vue'   // User 元件
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
+const user = ref(null)
 
 const switchPage = (pageName) => {
   currentPage.value = pageName
@@ -17,6 +18,14 @@ const switchPage = (pageName) => {
 
 const handleFilter = (location) => {
   console.log('篩選地點:', location)
+}
+
+const handleLoginSuccess = () => {
+  const storeUser = localStorage.getItem('user');
+  if (storeUser) {
+    user.value = JSON.parse(storeUser);
+  }
+  switchPage('user');
 }
 
 // 切換主題模式
@@ -32,16 +41,25 @@ onMounted(() => {
     isDarkMode.value = true
   }
   
-  // 如果使用者在 localStorage 裡有 token，代表登入過，可以直接顯示 user 頁 (選用)
-  /*
-  if (localStorage.getItem('token')) {
-    currentPage.value = 'user'
+  const storeUser = localStorage.getItem('user');
+  if (storeUser) {
+    user.value = JSON.parse(storeUser);
   }
-  */
+
+  if(localStorage.getItem('token') && user.value) {
+    currentPage.value = 'user';
+  }
 })
 
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
+})
+
+//監聽user狀態(用於登出)
+watch(user, (newVal) => {
+  if(!newVal) {
+    currentPage.value = 'login';// 登出後切換到登入頁面
+  }
 })
 </script>
 
@@ -54,6 +72,7 @@ watch(isDarkMode, (newVal) => {
       @changePage="switchPage"
       @filterLocation="handleFilter"  
       @toggleTheme="toggleTheme"
+      :userName="user ? user.name : ''"
     />
 
     <main class="content-area">
@@ -78,11 +97,11 @@ watch(isDarkMode, (newVal) => {
       </div>
 
       <div v-if="currentPage === 'login'">
-        <Login @loginSuccess="switchPage('user')" />
+        <Login @loginSuccess="handleLoginSuccess" />
       </div>
 
       <div v-if="currentPage === 'user'">
-        <User />
+        <User :user="user"/>
       </div>
 
     </main>

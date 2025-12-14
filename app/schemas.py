@@ -63,10 +63,15 @@ class ItineraryCreate(ItineraryBase):
     owner_user_id: str
     spot_ids: List[str] = []
 
-class ItinerarySpotInfo(BaseModel):
-    spot_id: str
-    day_order: Optional[int] = None
+class ItineraryItemUpdate(BaseModel):
+    item_id: int
+    new_order: int
+
+class ItinerarySpotOut(BaseModel):
+    id : int
+    day_order: int
     note: Optional[str] = None
+    spot: SpotOut
 
     class Config:
         from_attributes = True
@@ -76,7 +81,7 @@ class ItineraryOut(ItineraryBase):
     code: str
     owner_user_id: str
     created_at: datetime
-    spots: List[SpotOut] = []
+    spots: List[ItinerarySpotOut] = []
 
     class Config:
         from_attributes = True

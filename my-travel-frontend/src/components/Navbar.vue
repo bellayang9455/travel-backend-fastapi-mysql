@@ -1,18 +1,19 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   activePage: String,
-  isDarkMode: Boolean
+  isDarkMode: Boolean,
+  userName: String //接收來自 App.vue 的使用者名稱
 })
 
 const emit = defineEmits(['changePage', 'filterLocation', 'filterCategory', 'filterAccommodation', 'toggleTheme'])
 
 // --- 狀態變數 ---
-const isLoggedIn = ref(false)
+const isLoggedIn = computed(() => !!props.userName)
 const userName = ref('')
 
-// --- 下拉選單資料 (保持不變) ---
+// --- 下拉選單資料 ---
 const locations = [
   { name: '亞洲', value: 'Asia' },
   { name: '歐洲', value: 'Europe' },
@@ -60,30 +61,13 @@ const checkLoginStatus = () => {
 const handleLogout = () => {
   if (confirm('確定要登出嗎？')) {
     // 1. 清除 localStorage
-    localStorage.clear()
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     
-    // 2. 更新狀態
-    isLoggedIn.value = false
-    userName.value = ''
-    
-    // 3. 跳轉回登入頁或首頁
-    alert('已成功登出 👋')
-    emit('changePage', 'login')
+    // 2. 跳轉回登入頁或首頁
+    alert('已成功登出')
   }
 }
-
-// --- 生命週期與監聽 ---
-
-// 1. 一載入就檢查
-onMounted(() => {
-  checkLoginStatus()
-})
-
-// 2. 當頁面切換時 (例如從 Login 跳轉到 Home)，重新檢查狀態
-// 這是讓 Navbar 能即時反應登入/登出的關鍵！
-watch(() => props.activePage, () => {
-  checkLoginStatus()
-})
 </script>
 
 <template>
@@ -166,7 +150,7 @@ watch(() => props.activePage, () => {
           class="add-btn" 
           @click="emit('changePage', 'add')"
         >
-          ➕ 新增景點
+           新增景點
         </button>
 
         <div class="user-auth">
@@ -196,7 +180,7 @@ watch(() => props.activePage, () => {
               @click="emit('changePage', 'user')"
               title="查看個人資料"
             >
-              👤 {{ userName }}
+              👤 {{props.userName }}
             </button>
             <span class="divider">|</span>
             <button class="text-btn logout-btn" @click="handleLogout">
@@ -212,8 +196,6 @@ watch(() => props.activePage, () => {
 </template>
 
 <style scoped>
-/* (原本的 CSS 保持不變，下面是新增或修改的) */
-
 .navbar {
   background-color: var(--nav-bg);
   box-shadow: 0 2px 10px var(--shadow-color);
