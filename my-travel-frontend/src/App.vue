@@ -10,6 +10,7 @@ import Home from './components/Home.vue'
 const currentPage = ref('home')
 const isDarkMode = ref(false)
 const user = ref(null)
+const currentCategory = ref('全部');
 
 // 切換頁面
 const switchPage = (pageName) => {
@@ -37,6 +38,11 @@ const handleLoginSuccess = (userData) => {
   }
   switchPage('home'); // 登入後通常跳轉首頁或個人頁
 }
+
+const handleCategorySelect = (category) => {
+  currentCategory.value = category; // 更新分類
+  switchPage('home'); // 確保切換回首頁
+};
 
 // 處理登出 (Navbar 觸發)
 const handleLogout = () => {
@@ -102,12 +108,16 @@ watch(user, (newVal) => {
       @filterLocation="handleFilter"  
       @toggleTheme="toggleTheme"
       @logout="handleLogout"
+      @selectCategory="handleCategorySelect"
     />
 
     <main class="content-area">
       
       <div v-if="currentPage === 'home'">
-        <Home :user="user" />
+        <Home 
+            :user="user"
+            :initialCategory="currentCategory"
+         />
       </div>
 
       <div v-if="currentPage === 'add'">

@@ -7,7 +7,15 @@ const props = defineProps({
   userName: String //接收來自 App.vue 的使用者名稱
 })
 
-const emit = defineEmits(['changePage', 'filterLocation', 'filterCategory', 'filterAccommodation', 'toggleTheme'])
+const emit = defineEmits([
+  'changePage', 
+  'filterLocation', 
+  'filterCategory', 
+  'filterAccommodation', 
+  'toggleTheme',
+  'selectCategory',
+  'logout'
+])
 
 // --- 狀態變數 ---
 const isLoggedIn = computed(() => !!props.userName)
@@ -24,12 +32,12 @@ const locations = [
 ]
 
 const categories = [
-  { name: '🏞️ 自然生態', value: '自然' },
-  { name: '🏯 歷史人文', value: '文化' },
-  { name: '🍜 在地美食', value: '美食' },
-  { name: '🎡 休閒娛樂', value: '娛樂' },
-  { name: '🛍️ 購物商圈', value: '購物' },
-  { name: '📸 網美打卡', value: '打卡' },
+  { name: '🏞️ 自然生態', value: '自然生態' },
+  { name: '🏯 歷史人文', value: '歷史人文' },
+  { name: '🍜 在地美食', value: '在地美食' },
+  { name: '🎡 休閒娛樂', value: '休閒娛樂' },
+  { name: '🛍️ 購物商圈', value: '購物商圈' },
+  { name: '📸 網美打卡', value: '網美打卡' },
   { name: '✨ 其他', value: '其他' }
 ]
 
@@ -76,7 +84,7 @@ const handleLogout = () => {
       
       <div 
         class="logo-area" 
-        @click="emit('changePage', 'home'); emit('filterLocation', ''); emit('filterCategory', ''); emit('filterAccommodation', '')"
+        @click="emit('changePage', 'home'); emit('filterLocation', ''); emit('filterCategory', '全部'); emit('filterAccommodation', '')"
       >
         <span class="icon">✈️</span>
         <span class="title">旅遊日記</span>
@@ -112,11 +120,11 @@ const handleLogout = () => {
             🏷️ 景點分類 ▼
           </button>
           <div class="dropdown-content">
-            <a @click.stop="emit('changePage', 'home'); emit('filterCategory', '')">全部顯示</a>
+            <a @click.stop="emit('changePage', 'home'); emit('selectCategory', '全部')">所有分類</a>
             <a 
               v-for="cat in categories" 
               :key="cat.value"
-              @click.stop="emit('changePage', 'home'); emit('filterCategory', cat.value)"
+              @click.stop="emit('changePage', 'home'); emit('selectCategory', cat.value)"
             >
               {{ cat.name }}
             </a>
@@ -201,6 +209,10 @@ const handleLogout = () => {
   box-shadow: 0 2px 10px var(--shadow-color);
   position: fixed; top: 0; left: 0; width: 100%; height: 64px; z-index: 1000;
   transition: background-color 0.3s;
+}
+.nav-categories {
+    display: flex;
+    gap: 15px;
 }
 .container {
   max-width: 100%; width: 100%; margin: 0; padding: 0 40px; height: 100%;

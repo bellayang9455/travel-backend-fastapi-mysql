@@ -4,7 +4,8 @@ import axios from 'axios'
 
 // --- 接收 App.vue 傳來的 user ---
 const props = defineProps({
-  user: Object
+  user: Object,
+  initialCategory: String
 })
 
 // --- 設定 API URL ---
@@ -16,6 +17,7 @@ const itineraries = ref([]) // 使用者的行程列表
 const loading = ref(true)
 const errorMessage = ref('')
 const sortBy = ref('newest') // 預設排序
+const selectedCategory = ref(props.initialCategory || '全部')//景點分類預設全部
 
 // 彈出視窗控制
 const showAddModal = ref(false)
@@ -28,9 +30,23 @@ const getImageUrl = (id) => {
   return `https://picsum.photos/seed/${id}/400/300`
 }
 
-// --- 計算屬性：排序邏輯 (保留您原本的寫法) ---
+// --- 計算屬性：取得所有分類 ---
+const allCategories = computed(() => {
+  // 1. 取得所有景點的分類
+  const categories = spots.value.map(s => s.category || '未分類')
+  // 2. 使用 Set 去除重複，並在最前面加上 '全部'
+  return ['全部', ...new Set(categories)]
+})
+
+// --- 計算屬性：排序邏輯 ---
 const sortedSpots = computed(() => {
   const list = [...spots.value]
+
+  //景點分類篩選
+  if (selectedCategory.value !== '全部') {
+    list = list.filter(spot => (spot.category || '未分類') === selectedCategory.value)
+  }
+
   if (sortBy.value === 'newest') {
     // 假設 id 越大越新，反轉陣列
     return list.reverse() 
@@ -118,6 +134,12 @@ onMounted(() => {
   fetchSpots()
   if (props.user) fetchUserItineraries()
 })
+
+watch(() => props.initialCategory, (newVal) => {
+    if (newVal) {
+        selectedCategory.value = newVal;
+    }
+});
 
 // 監聽 user 變化 (例如剛登入)
 watch(() => props.user, (newUser) => {
