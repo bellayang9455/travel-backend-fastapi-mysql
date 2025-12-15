@@ -177,8 +177,6 @@ def create_itinerary(payload: schemas.ItineraryCreate, db: Session = Depends(get
         spots=spots_data,
     )
 
-# --- 以下是新增的功能 ---
-
 # 5. [加入景點] 支援重複加入，自動計算順序
 @router.post("/{itinerary_id}/add_spot")
 def add_spot_to_itinerary(itinerary_id: str, data: ItemAdd, db: Session = Depends(get_db)):

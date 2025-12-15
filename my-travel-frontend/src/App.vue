@@ -1,31 +1,49 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import SpotForm from './components/SpotForm.vue'
-import SpotList from './components/SpotList.vue'
 import Navbar from './components/Navbar.vue'
 import RegisterForm from './components/RegisterForm.vue'
-import Login from './components/Login.vue' // Login 元件
-import User from './components/User.vue'   // User 元件
+import Login from './components/Login.vue' 
+import User from './components/User.vue'
+import SpotForm from './components/SpotForm.vue'
+import Home from './components/Home.vue' 
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
 const user = ref(null)
 
+// 切換頁面
 const switchPage = (pageName) => {
   currentPage.value = pageName
   window.scrollTo({top: 0, behavior: 'smooth'})
 }
 
+// 處理篩選 (如果您的 Home.vue 有實作接收這個 prop，可以傳進去，這裡先保留 console)
 const handleFilter = (location) => {
   console.log('篩選地點:', location)
 }
 
-const handleLoginSuccess = () => {
-  const storeUser = localStorage.getItem('user');
-  if (storeUser) {
-    user.value = JSON.parse(storeUser);
+// 處理登入成功
+const handleLoginSuccess = (userData) => {
+  // 如果 Login 元件回傳了 user 資料，直接使用
+  if (userData) {
+    user.value = userData;
+    localStorage.setItem('user', JSON.stringify(userData));
+  } else {
+    // 否則從 localStorage 讀取
+    const storeUser = localStorage.getItem('user');
+    if (storeUser) {
+      user.value = JSON.parse(storeUser);
+    }
   }
-  switchPage('user');
+  switchPage('home'); // 登入後通常跳轉首頁或個人頁
+}
+
+// 處理登出 (Navbar 觸發)
+const handleLogout = () => {
+    user.value = null;
+    localStorage.removeItem('user');
+    localStorage.removeItem('token'); // 如果有存 token 也要清
+    switchPage('login');
 }
 
 // 切換主題模式
@@ -36,29 +54,39 @@ const toggleTheme = () => {
 
 // 網頁載入時讀取設定
 onMounted(() => {
+  // 1. 讀取主題
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') {
     isDarkMode.value = true
   }
   
+  // 2. 讀取使用者
   const storeUser = localStorage.getItem('user');
   if (storeUser) {
-    user.value = JSON.parse(storeUser);
+    try {
+        user.value = JSON.parse(storeUser);
+    } catch (e) {
+        console.error("User data parse error", e);
+        localStorage.removeItem('user');
+    }
   }
 
+  // 3. 如果已登入，您原本的邏輯是跳轉到 User 頁，這裡保留您的設定
+  // (通常一般網站會預設留首頁，但這裡照您的需求)
   if(localStorage.getItem('token') && user.value) {
-    currentPage.value = 'user';
+    // currentPage.value = 'user'; 
   }
 })
 
+// 監聽主題變化
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
 
-//監聽user狀態(用於登出)
+// 監聽 user 狀態 (如果 user 變成 null，自動跳轉登入頁)
 watch(user, (newVal) => {
   if(!newVal) {
-    currentPage.value = 'login';// 登出後切換到登入頁面
+    // currentPage.value = 'login'; 
   }
 })
 </script>
@@ -69,20 +97,17 @@ watch(user, (newVal) => {
     <Navbar 
       :activePage="currentPage" 
       :isDarkMode="isDarkMode"
+      :userName="user ? user.name : ''"
       @changePage="switchPage"
       @filterLocation="handleFilter"  
       @toggleTheme="toggleTheme"
-      :userName="user ? user.name : ''"
+      @logout="handleLogout"
     />
 
     <main class="content-area">
       
       <div v-if="currentPage === 'home'">
-        <div class="hero-header">
-          <h2>探索世界之美</h2>
-          <p>紀錄每一個感動的瞬間</p>
-        </div>
-        <SpotList />
+        <Home :user="user" />
       </div>
 
       <div v-if="currentPage === 'add'">
@@ -101,7 +126,10 @@ watch(user, (newVal) => {
       </div>
 
       <div v-if="currentPage === 'user'">
-        <User :user="user"/>
+        <User 
+            :user="user" 
+            @changePage="switchPage" 
+        />
       </div>
 
     </main>
@@ -109,7 +137,7 @@ watch(user, (newVal) => {
 </template>
 
 <style>
-/* 您的 CSS 樣式保持不變 */
+/* 您的 CSS 樣式完全保持不變 */
 :root {
   --bg-color: #fafafa;
   --text-color: #2c3e50;
@@ -164,6 +192,8 @@ body {
   min-height: 100vh;
 }
 
+/* 如果您的 Home.vue 已經包含了 hero-header，這裡的樣式可以留著給 Home.vue 用，
+   或者如果 Home.vue 有 scoped style，這裡也可以保留作為全域預設值 */
 .hero-header {
   text-align: center;
   margin-bottom: 40px;

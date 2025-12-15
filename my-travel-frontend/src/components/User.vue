@@ -26,7 +26,7 @@ const props = defineProps({
 const API_URL = "http://localhost:8000"; 
 
 // --- 狀態變數：使用者 ---
-const localUser = ref(null);
+const localUser = ref(null);    
 const loading = ref(true);
 const error = ref(null);
 const isEditing = ref(false);
