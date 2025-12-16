@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     mysql_user: str = "travel"
     mysql_password: str = "travel"
     mysql_host: str = "localhost"
-    mysql_port: int = 3306
-    mysql_db: str = "travel_db"
+    mysql_port: int = 3307
+    mysql_db: str = "travel_db1"
     cors_origins: List[str] = ["http://localhost:3000"]
     app_host: str = "0.0.0.0"
     app_port: int = 8000
