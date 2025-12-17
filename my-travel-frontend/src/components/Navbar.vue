@@ -74,6 +74,7 @@ const handleLogout = () => {
     
     // 2. 跳轉回登入頁或首頁
     alert('已成功登出')
+    window.location.href = '/'
   }
 }
 </script>

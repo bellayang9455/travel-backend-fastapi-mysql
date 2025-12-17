@@ -40,11 +40,15 @@ const allCategories = computed(() => {
 
 // --- 計算屬性：排序邏輯 ---
 const sortedSpots = computed(() => {
-  const list = [...spots.value]
+  let list = [...spots.value]
 
   //景點分類篩選
   if (selectedCategory.value !== '全部') {
-    list = list.filter(spot => (spot.category || '未分類') === selectedCategory.value)
+    list = list.filter(spot => {
+       const cat = spot.category || '未分類';
+       // 讓 '🛍️ 購物商圈' 也能被 '購物商圈' 找到
+       return cat.includes(selectedCategory.value);
+    })
   }
 
   if (sortBy.value === 'newest') {
@@ -135,9 +139,13 @@ onMounted(() => {
   if (props.user) fetchUserItineraries()
 })
 
+// 監聽 initialCategory 變化
 watch(() => props.initialCategory, (newVal) => {
     if (newVal) {
         selectedCategory.value = newVal;
+
+        const matchCount = spots.value.filter(s => s.category === newVal).length;
+        console.log(`資料庫裡分類是「${newVal}」的共有: ${matchCount} 筆`);
     }
 });
 
@@ -154,7 +162,7 @@ watch(() => props.user, (newUser) => {
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
-        <span class="count" v-if="!errorMessage && !loading">共 {{ spots.length }} 個景點</span>
+        <span class="count" v-if="!errorMessage && !loading">共 {{ sortedSpots.length }} 個景點</span>
       </div>
       
       <div class="header-right" v-if="!loading && !errorMessage">

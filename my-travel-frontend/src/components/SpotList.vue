@@ -7,16 +7,32 @@ const spots = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
 const sortBy = ref('newest') // 預設排序：最新
+const selectedCategory = ref('全部')
 
 // --- 產生隨機圖片網址 (使用 id 當種子) ---
 const getImageUrl = (id) => {
   return `https://picsum.photos/seed/${id}/400/300`
 }
+const allCategories = computed(() => {
+  const categories = spots.value.map(s => s.category || '未分類')
+  return ['全部', ...new Set(categories)]
+})
+
+const setCategory = (cat) => {
+  console.log('目前點擊了:', cat); 
+  console.log('目前的資料總數:', spots.value.length);
+  selectedCategory.value = cat;
+}
 
 // --- 計算屬性：處理排序邏輯 ---
 const sortedSpots = computed(() => {
   // 1. 複製一份陣列，避免直接修改原始資料 (Vue 最佳實踐)
-  const list = [...spots.value]
+  let list = [...spots.value]
+
+  // 篩選條件：只顯示特定分類
+  if (selectedCategory.value !== '全部') {
+    list = list.filter(spot => (spot.category || '未分類') === selectedCategory.value)
+  }
   
   // 2. 根據 sortBy 的值進行排序
   if (sortBy.value === 'newest') {
@@ -76,7 +92,9 @@ onMounted(() => {
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
-        <span class="count" v-if="!errorMessage && !loading">共 {{ spots.length }} 個景點</span>
+        <span class="count" v-if="!errorMessage && !loading">
+          共 {{ sortedSpots.length }} 個景點
+        </span>
       </div>
       
       <div class="header-right" v-if="!loading && !errorMessage">
@@ -88,13 +106,26 @@ onMounted(() => {
       </div>
     </div>
 
+    <div class="category-section" v-if="!loading && !errorMessage">
+      <button 
+        v-for="cat in allCategories" 
+        :key="cat"
+        :class="['cat-btn', { active: selectedCategory === cat }]"
+        @click="setCategory(cat)"
+      >
+        {{ cat }}
+      </button>
+    </div>
+
     <div v-if="loading" class="state-box loading">
       <span class="spinner">⏳</span> 正在讀取資料...
     </div>
 
     <div v-else-if="errorMessage" class="state-box error">
       <pre>{{ errorMessage }}</pre>
-      <button @click="fetchSpots" class="retry-btn">🔄 再試一次</button>
+      <button @click="fetchSpots" class="retry-btn">
+        🔄 再試一次
+      </button>
     </div>
 
     <div v-else class="grid-layout">
@@ -102,8 +133,12 @@ onMounted(() => {
         
         <div class="image-box">
           <img :src="getImageUrl(spot.id)" alt="景點圖片">
-          <span class="category-tag">{{ spot.category || '未分類' }}</span>
-          <span class="location-tag" v-if="spot.location">📍 {{ spot.location }}</span>
+          <span class="category-tag">
+            {{ spot.category || '未分類' }}
+          </span>
+          <span class="location-tag" v-if="spot.location">
+            📍 {{ spot.location }}
+          </span>
         </div>
 
         <div class="card-body">
@@ -115,7 +150,10 @@ onMounted(() => {
 
           <div class="tags-row">
             <template v-if="spot.features && spot.features.features">
-              <span v-for="(tag, index) in spot.features.features.slice(0, 3)" :key="index" class="feature-tag">
+              <span 
+                v-for="(tag, index) in spot.features.features.slice(0, 3)" 
+                :key="index" 
+                class="feature-tag">
                 #{{ tag }}
               </span>
             </template>
@@ -156,6 +194,12 @@ onMounted(() => {
 
 .header-left h2 { margin: 0; color: var(--text-color, #333); display: inline-block; margin-right: 10px;}
 .count { color: var(--text-secondary, #666); font-size: 0.9rem; }
+
+/* 分類按鈕 */
+.category-section { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.cat-btn { padding: 6px 16px; border: 1px solid #ddd; background: white; border-radius: 20px; cursor: pointer; transition: all 0.3s; }
+.cat-btn.active { background-color: #4CAF50; color: white; border-color: #4CAF50; }
+.cat-btn:hover:not(.active) { background-color: #f0f0f0; }
 
 /* 排序選單 */
 .sort-select {
