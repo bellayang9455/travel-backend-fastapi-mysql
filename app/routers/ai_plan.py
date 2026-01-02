@@ -14,7 +14,7 @@ from ..database import get_db
 router = APIRouter()
 
 # 👇 你的 API KEY
-GENAI_API_KEY = "AIzaSyDnrdTNjS7gPCAC13t-oGs9Sv2H_6B7wDA" 
+GENAI_API_KEY = "" 
 genai.configure(api_key=GENAI_API_KEY)
 
 class TripRequest(BaseModel):
