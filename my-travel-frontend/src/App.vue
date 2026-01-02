@@ -6,6 +6,7 @@ import Login from './components/Login.vue'
 import User from './components/User.vue'
 import SpotForm from './components/SpotForm.vue'
 import Home from './components/Home.vue' 
+import AIPlanner from './components/AIPlanner.vue'
 
 const currentPage = ref('home')
 const isDarkMode = ref(false)
@@ -142,6 +143,9 @@ watch(user, (newVal) => {
         />
       </div>
 
+      <div v-if="currentPage === 'ai_planner'">
+          <AIPlanner />
+      </div>
     </main>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 
+
 const props = defineProps({
   activePage: String,
   isDarkMode: Boolean,
@@ -88,7 +89,7 @@ const handleLogout = () => {
         @click="emit('changePage', 'home'); emit('filterLocation', ''); emit('filterCategory', '全部'); emit('filterAccommodation', '')"
       >
         <span class="icon">✈️</span>
-        <span class="title">旅遊日記</span>
+        <span class="title">旅遊GO GO GO!</span>
       </div>
 
       <div class="menu-area">
@@ -147,10 +148,17 @@ const handleLogout = () => {
              </a>
           </div>
         </div>
+        <button 
+          class="menu-btn ai-btn" 
+          :class="{ active: activePage === 'ai_planner' }"
+          @click="emit('changePage', 'ai_planner')"
+          >
+          AI 行程規劃/推薦
+        </button>
       </div>
 
       <div class="action-area">
-        
+
         <button class="theme-btn" @click="emit('toggleTheme')" title="切換風格">
           {{ isDarkMode ? '🌙' : '☀️' }}
         </button>
@@ -305,5 +313,27 @@ const handleLogout = () => {
 
 .logout-btn:hover {
   color: #e74c3c; /* 登出按鈕 hover 變紅色，表示警告 */
+}
+/* AI 按鈕特殊樣式 */
+.ai-btn {
+  background: linear-gradient(45deg, #FF6B6B, #FFD93D); /* 漸層色 */
+  color: white !important; /* 強制白字 */
+  font-weight: bold;
+  border-radius: 20px; /* 圓角大一點 */
+  padding: 8px 16px;
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-btn:hover {
+  transform: translateY(-2px) scale(1.05); /* 浮起來 */
+  box-shadow: 0 6px 15px rgba(255, 107, 107, 0.5);
+  background: linear-gradient(45deg, #FF8E53, #FF6B6B);
+}
+
+/* 當被選中時的樣式 */
+.ai-btn.active {
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+  transform: translateY(0);
 }
 </style>

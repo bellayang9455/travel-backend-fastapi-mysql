@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON,Float
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime, timedelta
 from .database import Base
@@ -56,6 +56,9 @@ class Spot(Base):
     location: Mapped[str | None] = mapped_column(String(100))
     hours: Mapped[str | None] = mapped_column(String(100))
     activities: Mapped[dict | None] = mapped_column(JSON)
+    
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
