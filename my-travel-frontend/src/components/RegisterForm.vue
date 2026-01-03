@@ -83,8 +83,25 @@ const handleRegister = async () => {
 
     await api.post('/auth/register', payload);
 
-    alert(`🎉 註冊成功！歡迎 ${registerData.value.name} 加入！`);
-    emit('registerSuccess'); 
+    const loginRes = await api.post('/auth/login', {
+      email: registerData.value.email,
+      password: registerData.value.password
+    });
+
+    const { access_token, user_id, user_name } = loginRes.data;
+
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user_id', user_id);
+    localStorage.setItem('user_name', user_name);
+    
+    const userData = {
+        id: user_id,
+        name: user_name,
+        email: registerData.value.email
+    };
+
+    alert(`🎉 註冊成功！歡迎 ${user_name} 加入！`);
+    emit('registerSuccess', userData);
     
   } catch (error) {
     if (error.response && error.response.data && error.response.data.detail) {

@@ -117,10 +117,29 @@ const handleSaveToMyTrip = async () => {
 
     <div v-if="generatedItinerary.length > 0" class="result-section">
       
-      <div v-for="spot in generatedItinerary" :key="spot.name" class="ai-card">
-        <h4>Day {{ spot.day }} {{ spot.time_of_day }} - {{ spot.name }}</h4>
-        <p>{{ spot.description }}</p>
-        <small>📍 {{ spot.address }}</small>
+      <div v-for="(spot, index) in generatedItinerary" :key="spot.name">
+        
+        <div 
+          v-if="index === 0 || spot.day !== generatedItinerary[index - 1].day" 
+          class="day-header"
+        >
+          <span class="day-badge">Day {{ spot.day }}</span>
+          <span class="time-badge">{{ spot.time_of_day }}</span>
+        </div>
+
+        <div v-if="index > 0 && spot.transportation" class="transport-line">
+          <div class="line"></div>
+          <div class="trans-tag">
+             🚗 {{ spot.transportation }}
+          </div>
+          <div class="line"></div>
+        </div>
+
+        <div class="ai-card">
+          <h4>{{ spot.name }}</h4>
+          <p>{{ spot.description }}</p>
+          <small>📍 {{ spot.address }}</small>
+        </div>
       </div>
 
       <div class="action-buttons">
@@ -184,4 +203,56 @@ button:disabled { background-color: #ccc; }
   transition: transform 0.2s;
 }
 .save-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(255, 107, 107, 0.4); }
+.transport-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0; /* 讓線條緊貼卡片 */
+  padding: 5px 0;
+}
+
+.line {
+  width: 2px;
+  height: 15px;
+  background-color: #ddd;
+}
+
+.trans-tag {
+  background-color: #f0f4f8;
+  color: #666;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 15px;
+  border: 1px solid #e1e4e8;
+  margin: 2px 0;
+}
+
+/* 優化卡片樣式，讓它看起來像時間軸 */
+.ai-card {
+  /* ... 原本的樣式 ... */
+  position: relative;
+  z-index: 1; /* 蓋在線上面 */
+}
+
+.card-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.day-badge {
+  background-color: #4CAF50;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.time-badge {
+  background-color: #eee;
+  color: #333;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
 </style>

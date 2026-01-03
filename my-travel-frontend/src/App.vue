@@ -13,8 +13,19 @@ const isDarkMode = ref(false)
 const user = ref(null)
 const currentCategory = ref('全部');
 
+// 紀錄原本要跳轉的頁面
+const redirectPage = ref('')
+
 // 切換頁面
 const switchPage = (pageName) => {
+  // 如果從 AI 行程規劃跳轉到登入或註冊，記錄要回到 AI 頁面
+  if (currentPage.value === 'ai_planner' && (pageName === 'login' || pageName === 'register')) {
+     redirectPage.value = 'ai_planner'
+  } else if (pageName === 'home') {
+     // 如果回到首頁，就清空紀錄
+     redirectPage.value = ''
+  }
+
   currentPage.value = pageName
   window.scrollTo({top: 0, behavior: 'smooth'})
 }
@@ -37,7 +48,13 @@ const handleLoginSuccess = (userData) => {
       user.value = JSON.parse(storeUser);
     }
   }
-  switchPage('home'); // 登入後通常跳轉首頁或個人頁
+
+  if (redirectPage.value) {
+     switchPage(redirectPage.value); // 跳回剛剛的頁面 (AI)
+     redirectPage.value = ''; // 清空紀錄
+  } else {
+     switchPage('home'); // 預設跳回首頁
+  }
 }
 
 const handleCategorySelect = (category) => {
@@ -127,7 +144,7 @@ watch(user, (newVal) => {
 
       <div v-if="currentPage === 'register'">
         <RegisterForm 
-          @registerSuccess="switchPage('login')" 
+          @registerSuccess="handleLoginSuccess" 
           @changePage="switchPage" 
         />
       </div>
@@ -142,13 +159,15 @@ watch(user, (newVal) => {
             @changePage="switchPage" 
         />
       </div>
-
-      <div v-if="currentPage === 'ai_planner'">
-          <AIPlanner 
-            :is-logged-in="!!user"
-            @changePage="switchPage"
-          />
-      </div>
+      
+      <KeepAlive>
+        <div v-if="currentPage === 'ai_planner'">
+            <AIPlanner 
+              :is-logged-in="!!user"
+              @changePage="switchPage"
+            />
+        </div>
+      </KeepAlive>
     </main>
   </div>
 </template>

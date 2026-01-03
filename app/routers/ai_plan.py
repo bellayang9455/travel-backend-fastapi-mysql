@@ -31,6 +31,7 @@ async def generate_itinerary(request: TripRequest, db: Session = Depends(get_db)
         prompt = f"""
         你是一個旅遊資料庫助手。請幫我規劃「{request.destination}」的「{request.days}天」行程，風格為「{request.style}」。
         
+        請務必考量景點之間的距離與順路程度。
         請不要回傳任何聊天文字，**只回傳一個純 JSON 陣列 (Array)**。
         陣列中的每個物件代表一個景點，格式如下：
         [
@@ -43,7 +44,8 @@ async def generate_itinerary(request: TripRequest, db: Session = Depends(get_db)
                 "latitude": 緯度(數字, 請精準),
                 "longitude": 經度(數字, 請精準),
                 "day": 第幾天(數字),
-                "time_of_day": "上午/下午/晚上"
+                "time_of_day": "上午/下午/晚上",
+                "transportation": "從上個景點過來的交通建議 (例如：步行 5 分鐘 / 搭捷運紅線 10 分鐘)。如果是當天第一個景點，請寫 '自行前往'。"
             }}
         ]
         """
