@@ -10,11 +10,12 @@ import uuid
 # 引入你的 models 和 database
 from ..models import Spot
 from ..database import get_db
+from ..config import settings
 
 router = APIRouter()
 
 # 👇 你的 API KEY
-GENAI_API_KEY = "" 
+GENAI_API_KEY = settings.gemini_api_key
 genai.configure(api_key=GENAI_API_KEY)
 
 class TripRequest(BaseModel):

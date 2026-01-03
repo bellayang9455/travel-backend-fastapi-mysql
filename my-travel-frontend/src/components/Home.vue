@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import axios from 'axios'
+import api from '../api/axios.js'
 
 // --- 接收 App.vue 傳來的 user ---
 const props = defineProps({
@@ -8,8 +8,6 @@ const props = defineProps({
   initialCategory: String
 })
 
-// --- 設定 API URL ---
-const API_URL = "http://localhost:8000"; 
 
 // --- 狀態變數 ---
 const spots = ref([])
@@ -69,7 +67,7 @@ const fetchSpots = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
-    const response = await axios.get(`${API_URL}/spots`) // 改用變數
+    const response = await api.get(`/api/spots`) // 改用變數
     spots.value = response.data
     if (spots.value.length === 0) {
       errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
@@ -93,7 +91,7 @@ const fetchUserItineraries = async () => {
         return;
     }
     try {
-        const res = await axios.get(`${API_URL}/itineraries/user/${props.user.id}`);
+        const res = await api.get(`/api/itineraries/user/${props.user.id}`);
         itineraries.value = res.data;
     } catch (e) {
         console.error("載入行程失敗", e);
@@ -122,7 +120,7 @@ const openAddModal = (spotId) => {
 const addToItinerary = async () => {
     if (!selectedItineraryId.value) return;
     try {
-        await axios.post(`${API_URL}/itineraries/${selectedItineraryId.value}/add_spot`, {
+        await api.post(`/api/itineraries/${selectedItineraryId.value}/add_spot`, {
             spot_id: selectedSpotId.value
         });
         alert("🎉 成功加入行程！");

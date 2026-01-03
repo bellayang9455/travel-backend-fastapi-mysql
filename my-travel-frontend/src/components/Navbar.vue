@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-
+import api from '../api/axios.js'
 
 const props = defineProps({
   activePage: String,
@@ -21,6 +21,26 @@ const emit = defineEmits([
 // --- 狀態變數 ---
 const isLoggedIn = computed(() => !!props.userName)
 const userName = ref('')
+
+const handleJoinTrip = async () => {
+  if (!inviteCode.value) return alert('請輸入邀請碼')
+  
+  try {
+    // ✨ 2. 呼叫後端加入行程 API
+    // 注意：api.post 會自動帶上 Token
+    const res = await api.post(`/api/collab/join/${inviteCode.value}`)
+    
+    alert(`🎉 ${res.data.message}`)
+    inviteCode.value = '' // 清空輸入框
+    
+    // 如果你希望加入後直接跳轉到該行程，可以請後端回傳行程 ID，然後前端切換頁面
+    // emit('changePage', 'user') // 例如跳轉到個人頁面查看
+  } catch (error) {
+    console.error(error)
+    const msg = error.response?.data?.detail || '加入失敗'
+    alert(`❌ ${msg}`)
+  }
+}
 
 // --- 下拉選單資料 ---
 const locations = [
@@ -71,7 +91,8 @@ const handleLogout = () => {
   if (confirm('確定要登出嗎？')) {
     // 1. 清除 localStorage
     localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    localStorage.removeItem('user_id')
+    localStorage.removeItem('user_name')
     
     // 2. 跳轉回登入頁或首頁
     alert('已成功登出')

@@ -1,0 +1,50 @@
+// src/api/axios.js
+
+import axios from 'axios';
+
+// 1. 建立一個專用的 api 實例
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000', // 👈 請確認這是你後端的網址
+  timeout: 200000, // 可選的請求超時設定
+});
+
+// 2.【請求攔截器】自動帶上 Token
+api.interceptors.request.use(
+  (config) => {
+    // 從 localStorage 拿出 token
+    const token = localStorage.getItem('token');
+    // 如果有 token，就把它加到 Header 裡
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 3.【回應攔截器】處理 Token 過期 (401 錯誤)
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.log('Token 過期，強制登出');
+      
+      // 清除髒掉的 Token
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_name');
+      localStorage.removeItem('user_id');
+
+      // 強制重新整理頁面 (讓 Navbar 變回未登入狀態)
+      // 如果你有用 router，也可以寫 router.push('/login')
+      window.location.href = '/login'; 
+    }
+    return Promise.reject(error);
+  }
+);
+
+// 匯出這個設定好的 api
+export default api;

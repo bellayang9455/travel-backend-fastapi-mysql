@@ -1,10 +1,17 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON,Float
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON, Float, Table
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime, timedelta
 from .database import Base
 
 def taiwan_time():
     return datetime.utcnow() + timedelta(hours=8)
+
+collaborators_table = Table(
+    "collaborators",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+    Column("itinerary_id", ForeignKey("itineraries.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -23,6 +30,11 @@ class User(Base):
     itineraries: Mapped[list["Itinerary"]] = relationship(back_populates="owner")
     reviews: Mapped[list["Review"]] = relationship(back_populates="user")
     travel_records: Mapped[list["TravelRecord"]] = relationship(back_populates="user")
+    
+    collaborating_itineraries: Mapped[list["Itinerary"]] = relationship(
+        secondary=collaborators_table, 
+        back_populates="collaborators"
+    )
 
 
 class Itinerary(Base):
@@ -44,6 +56,11 @@ class Itinerary(Base):
 
     spots: Mapped[list["ItinerarySpot"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
     travel_records: Mapped[list["TravelRecord"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
+    
+    collaborators: Mapped[list["User"]] = relationship(
+        secondary=collaborators_table, 
+        back_populates="collaborating_itineraries"
+    )
 
 
 class Spot(Base):

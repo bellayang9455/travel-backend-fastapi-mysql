@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
 from .. import models, schemas
-from ..utils import gen_uuid
+import uuid
 
-router = APIRouter(prefix="/spots", tags=["spots"])
+router = APIRouter(tags=["spots"])
 
 @router.get("/", response_model=List[schemas.SpotOut])
 def list_spots(q: str = Query("", description="關鍵字"), db: Session = Depends(get_db)):

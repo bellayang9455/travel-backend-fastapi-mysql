@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'; // 引入 watch
-import axios from 'axios';
+import api from '../api/axios.js';
 
 const emit = defineEmits(['registerSuccess', 'changePage'])
 
@@ -36,7 +36,7 @@ const handleNameInput = () => {
   checkTimeout = setTimeout(async () => {
     try {
       // 呼叫剛剛寫好的後端 API
-      const response = await axios.get(`http://localhost:8000/check_name/${registerData.value.name}`);
+      const response = await api.get(`/auth/check_name/${registerData.value.name}`);
       
       if (response.data.exists) {
         nameAvailable.value = false;
@@ -81,7 +81,7 @@ const handleRegister = async () => {
       name: registerData.value.name
     };
 
-    await axios.post('http://localhost:8000/register', payload);
+    await api.post('/auth/register', payload);
 
     alert(`🎉 註冊成功！歡迎 ${registerData.value.name} 加入！`);
     emit('registerSuccess'); 

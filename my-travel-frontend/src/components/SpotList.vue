@@ -1,89 +1,135 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, computed, watch } from 'vue'
+import api from '../api/axios.js'
+
+const props = defineProps({
+  user: Object,
+  initialCategory: String
+})
 
 // --- 狀態變數 ---
 const spots = ref([])
+const itineraries = ref([]) // ✨ 修正這裡
 const loading = ref(true)
 const errorMessage = ref('')
-const sortBy = ref('newest') // 預設排序：最新
+const sortBy = ref('newest') 
 const selectedCategory = ref('全部')
 
-// --- 產生隨機圖片網址 (使用 id 當種子) ---
-const getImageUrl = (id) => {
-  return `https://picsum.photos/seed/${id}/400/300`
-}
+const showAddModal = ref(false)
+const selectedSpotId = ref(null)
+const selectedItineraryId = ref('')
+
+// --- 產生隨機圖片網址 ---
+const getImageUrl = (id) => `https://picsum.photos/seed/${id}/400/300`
+
 const allCategories = computed(() => {
   const categories = spots.value.map(s => s.category || '未分類')
   return ['全部', ...new Set(categories)]
 })
 
 const setCategory = (cat) => {
-  console.log('目前點擊了:', cat); 
-  console.log('目前的資料總數:', spots.value.length);
   selectedCategory.value = cat;
 }
 
-// --- 計算屬性：處理排序邏輯 ---
+// --- 計算屬性：排序與篩選 ---
 const sortedSpots = computed(() => {
-  // 1. 複製一份陣列，避免直接修改原始資料 (Vue 最佳實踐)
   let list = [...spots.value]
 
-  // 篩選條件：只顯示特定分類
   if (selectedCategory.value !== '全部') {
     list = list.filter(spot => (spot.category || '未分類') === selectedCategory.value)
   }
   
-  // 2. 根據 sortBy 的值進行排序
   if (sortBy.value === 'newest') {
-    // 假設後端回傳預設是舊到新 (id 小到大)，反轉就是最新
-    // 如果後端有 created_at 欄位，建議改用日期排序會更準確
     return list.reverse() 
   } else if (sortBy.value === 'oldest') {
-    return list // 原始順序
+    return list 
   } else if (sortBy.value === 'name_asc') {
-    // 中文筆畫排序 (localeCompare)
     return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')) 
   }
-  
   return list
 })
 
-// --- 抓取資料 ---
+// --- API 方法 ---
 const fetchSpots = async () => {
   loading.value = true
   errorMessage.value = ''
   
   try {
-    // 呼叫後端 API
-    const response = await axios.get('http://127.0.0.1:8000/spots')
+    // 假設後端 spots 路由前綴是 /api
+    const response = await api.get('/api/spots')
     spots.value = response.data
     
-    // 如果資料庫是空的
     if (spots.value.length === 0) {
       errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
     }
   } catch (error) {
     console.error("抓不到資料:", error)
-    
-    // 判斷錯誤類型，給予使用者友善的提示
     if (error.code === 'ERR_NETWORK') {
-      errorMessage.value = '❌ 無法連線到後端伺服器！請確認終端機是否已執行 uvicorn。'
-    } else if (error.response && error.response.status === 404) {
-      errorMessage.value = '❌ 找不到 API 路徑 (404)！'
+      errorMessage.value = '❌ 無法連線到後端伺服器！'
     } else {
-      errorMessage.value = `❌ 發生未預期的錯誤：${error.message}`
+      errorMessage.value = `❌ 發生錯誤：${error.message}`
     }
   } finally {
-    // 無論成功失敗，最後都要關閉載入動畫
     loading.value = false
   }
 }
 
-// --- 生命週期：元件掛載時自動抓取 ---
+const fetchUserItineraries = async () => {
+    if (!props.user) {
+        itineraries.value = [];
+        return;
+    }
+    try {
+        const res = await api.get(`/api/itineraries/user/${props.user.id}`);
+        itineraries.value = res.data;
+    } catch (e) {
+        console.error("載入行程失敗", e);
+    }
+};
+
+const openAddModal = (spotId) => {
+    if (!props.user) {
+        alert("請先登入才能加入行程！");
+        return;
+    }
+    if (itineraries.value.length === 0) {
+        alert("您還沒有建立任何行程，請先去「個人頁面」建立一個行程吧！");
+        return;
+    }
+    
+    selectedSpotId.value = spotId;
+    if (itineraries.value.length > 0) {
+        selectedItineraryId.value = itineraries.value[0].id; 
+    }
+    showAddModal.value = true;
+};
+
+const addToItinerary = async () => {
+    if (!selectedItineraryId.value) return;
+    try {
+        await api.post(`/api/itineraries/${selectedItineraryId.value}/add_spot`, {
+            spot_id: selectedSpotId.value,
+            day: 1 
+        });
+        alert("🎉 成功加入行程！");
+        showAddModal.value = false;
+    } catch (e) {
+        console.error(e);
+        alert("加入失敗，請稍後再試。");
+    }
+};
+
 onMounted(() => {
   fetchSpots()
+  // 如果一開始就有 user (例如重新整理後)，也要抓行程
+  if (props.user) fetchUserItineraries()
 })
+
+// 監聽 User 變化
+watch(() => props.user, (newUser) => {
+    if (newUser) fetchUserItineraries();
+    else itineraries.value = [];
+});
 </script>
 
 <template>
@@ -166,6 +212,24 @@ onMounted(() => {
              </span>
              <span v-else>自由探索</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showAddModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>選擇要加入的行程</h3>
+        <p>請選擇您想將此景點加入哪一個行程表：</p>
+        
+        <select v-model="selectedItineraryId" class="modal-select">
+            <option v-for="itin in itineraries" :key="itin.id" :value="itin.id">
+                {{ itin.title }}
+            </option>
+        </select>
+
+        <div class="modal-actions">
+            <button @click="addToItinerary" class="btn-confirm">確定加入</button>
+            <button @click="showAddModal = false" class="btn-cancel">取消</button>
         </div>
       </div>
     </div>
@@ -294,4 +358,60 @@ onMounted(() => {
   font-size: 12px; color: var(--text-secondary, #666);
 }
 .label { font-weight: bold; color: var(--text-color, #333); }
+
+.footer {
+  margin-top: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between; /* 左右分開 */
+  align-items: center;
+}
+
+/* ➕ 按鈕樣式 */
+.btn-add-itin {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%; /* 圓形 */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+.btn-add-itin:hover {
+  transform: scale(1.1);
+  background-color: #45a049;
+}
+
+/* Modal 彈窗樣式 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); /* 半透明黑底 */
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+}
+.modal-content {
+  background: white; padding: 25px; border-radius: 12px;
+  width: 90%; max-width: 400px; text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.modal-select {
+  width: 100%; padding: 10px; margin: 20px 0;
+  border-radius: 6px; border: 1px solid #ddd;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.btn-confirm { background: #2ecc71; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+.btn-cancel { background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+
+/* ... (Grid Layout, Card 等原本樣式請保留) ... */
+.grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.card { background: white; border: 1px solid #eee; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.image-box { height: 160px; overflow: hidden; position: relative; }
+.image-box img { width: 100%; height: 100%; object-fit: cover; }
+.card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
 </style>

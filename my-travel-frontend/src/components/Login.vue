@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import api from '../api/axios.js'
 
 // 定義可以發送的事件，對應 App.vue 裡的 @loginSuccess
 const emit = defineEmits(['loginSuccess'])
@@ -23,7 +23,7 @@ const handleLogin = async () => {
     isLoading.value = true
     
     // 2. 呼叫後端 API
-    const response = await axios.post('http://localhost:8000/login', {
+    const response = await api.post('/auth/login', {
       email: loginData.value.email,
       password: loginData.value.password
     })
@@ -40,8 +40,6 @@ const handleLogin = async () => {
     }
 
     localStorage.setItem('token', access_token)
-    localStorage.setItem('user', JSON.stringify(userObject))
-
     localStorage.removeItem('userId') 
     localStorage.removeItem('userName')
 

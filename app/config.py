@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
+import google.generativeai as genai
 
 class Settings(BaseSettings):
     mysql_user: str = "travel"
@@ -11,6 +12,7 @@ class Settings(BaseSettings):
     cors_origins: List[str] = ["http://localhost:3000"]
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    gemini_api_key: str
 
     @property
     def database_url(self) -> str:

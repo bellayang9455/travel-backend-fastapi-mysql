@@ -144,7 +144,10 @@ watch(user, (newVal) => {
       </div>
 
       <div v-if="currentPage === 'ai_planner'">
-          <AIPlanner />
+          <AIPlanner 
+            :is-logged-in="!!user"
+            @changePage="switchPage"
+          />
       </div>
     </main>
   </div>
