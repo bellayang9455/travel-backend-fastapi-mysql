@@ -1,11 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api/axios.js'
 
 const props = defineProps({
   activePage: String,
   isDarkMode: Boolean,
-  userName: String //接收來自 App.vue 的使用者名稱
+  userName: String, //接收來自 App.vue 的使用者名稱
+  userId: String
 })
 
 const emit = defineEmits([
@@ -18,23 +20,32 @@ const emit = defineEmits([
   'logout'
 ])
 
+const router = useRouter(); // 取得 router 實例
+const searchQuery = ref(''); // 搜尋關鍵字
+
 // --- 狀態變數 ---
 const isLoggedIn = computed(() => !!props.userName)
 const inviteCode = ref('')// 行程邀請碼的變數
 
 const handleJoinTrip = async () => {
   if (!inviteCode.value) return alert('請輸入邀請碼')
+  if (!props.userId) {
+      alert('請先登入才能加入行程！')
+      router.push({ name: 'login' })
+      return
+  }// 防呆
   
   try {
-    // ✨ 2. 呼叫後端加入行程 API
+    // 2. 呼叫後端加入行程 API
     // 注意：api.post 會自動帶上 Token
-    const res = await api.post(`/api/collab/join/${inviteCode.value}`)
+    const res = await api.post(`/api/collab/join/${inviteCode.value}`,{
+      user_id: props.userId
+    })
     
     alert(`🎉 ${res.data.message}`)
     inviteCode.value = '' // 清空輸入框
     
-    // 如果你希望加入後直接跳轉到該行程，可以請後端回傳行程 ID，然後前端切換頁面
-    // emit('changePage', 'user') // 例如跳轉到個人頁面查看
+    router.push({ name: 'user' }) // 跳轉到個人頁面查看
   } catch (error) {
     console.error(error)
     const msg = error.response?.data?.detail || '加入失敗'
@@ -104,6 +115,20 @@ const handleLogout = () => {
     }
   }
 }
+
+// 處理搜尋功能
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return;
+  
+  // 跳轉到首頁，並帶上 query 參數 (例如 /?q=台北)
+  router.push({ 
+    name: 'home', // 請確認你的路由設定首頁名稱是不是叫 'home' (或是 path: '/')
+    query: { q: searchQuery.value } 
+  });
+  
+  // 搜尋後清空框框
+  searchQuery.value = ''; 
+};
 </script>
 
 <template>
@@ -116,6 +141,15 @@ const handleLogout = () => {
       >
         <span class="icon">✈️</span>
         <span class="title">旅遊GO GO GO!</span>
+      </div>
+
+      <div class="search-bar">
+        <input 
+          v-model="searchQuery" 
+          @keyup.enter="handleSearch"
+          placeholder="搜尋景點..." 
+        />
+        <button @click="handleSearch">🔍</button>
       </div>
 
       <div class="menu-area">
@@ -185,6 +219,14 @@ const handleLogout = () => {
 
       <div class="action-area">
 
+        <div class="join-trip-box" v-if="isLoggedIn">
+          <input 
+            v-model="inviteCode" 
+            placeholder="輸入邀請碼" 
+            @keyup.enter="handleJoinTrip"
+          />
+          <button @click="handleJoinTrip" title="加入行程">👇</button>
+        </div>
         <button class="theme-btn" @click="emit('toggleTheme')" title="切換風格">
           {{ isDarkMode ? '🌙' : '☀️' }}
         </button>
@@ -397,4 +439,28 @@ const handleLogout = () => {
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
   transform: translateY(0);
 }
+
+.search-bar {
+  display: flex;
+  gap: 5px;
+  flex: 1; /* 讓它佔據中間空間 */
+  max-width: 400px; /* 不要太寬 */
+  margin: 0 20px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 8px 15px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+.search-bar button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
 </style>

@@ -6,7 +6,8 @@ import api from '../api/axios.js' // 引用設定好的 api
 const emit = defineEmits(['changePage'])
 
 const props = defineProps({
-  isLoggedIn: Boolean
+  isLoggedIn: Boolean,
+  user: Object
 })
 
 // 狀態變數
@@ -29,8 +30,6 @@ const generatePlan = async () => {
   generatedItinerary.value = [] // 清空上次結果
   
   try {
-    // 3. 修改這裡：使用 api.post
-    // (注意：請確認後端 routers/ai_plan.py 的路徑前綴是否正確，假設是 /api)
     const response = await api.post('/api/generate_itinerary', form.value, {
       timeout: 60000 // 60秒
     })
@@ -48,7 +47,7 @@ const generatePlan = async () => {
 const handleSaveToMyTrip = async () => {
   // 1. 檢查登入狀態
   
-  if (!props.isLoggedIn) {
+  if (!props.isLoggedIn || !props.user) {
     if(confirm('您需要登入才能儲存行程！是否前往登入頁面？')) {
       emit('changePage', 'login') // 跳轉到登入頁
     }
@@ -61,6 +60,7 @@ const handleSaveToMyTrip = async () => {
     // 2. 準備 payload
     const payload = {
       title: `${form.value.destination} ${form.value.days}日遊 (AI推薦)`,
+      user_id: props.user.id,
       spots: generatedItinerary.value.map(item => ({
         name: item.name,
         day: item.day,
@@ -74,8 +74,16 @@ const handleSaveToMyTrip = async () => {
     alert('🎉 成功加入您的行程表！')
     
   } catch (error) {
-    console.error(error)
-    alert('❌ 儲存失敗，請稍後再試')
+    console.error('❌ 儲存失敗，請稍後再試', error)
+
+    if (error.response && error.response.status === 401) {
+        alert("⚠️ 您的登入憑證已失效（可能是後端更新了金鑰），請重新登入。")
+        emit('changePage', 'login')
+    } else {
+        // 其他錯誤 (例如 500 Server Error) 不要登出，顯示錯誤訊息
+        const errorMsg = error.response?.data?.detail || "未知錯誤";
+        alert(`❌ 儲存失敗：${errorMsg}`);
+    }
   } finally {
     isSaving.value = false
   }
@@ -96,6 +104,11 @@ const getTransportIcon = (text) => {
   }
   
   return '🚗'; // 如果都沒比對到，就回傳車子
+}
+</script>
+<script>
+export default {
+  name: 'AIPlanner' 
 }
 </script>
 

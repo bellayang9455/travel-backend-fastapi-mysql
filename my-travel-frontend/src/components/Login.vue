@@ -36,7 +36,7 @@ const handleLogin = async () => {
     const userData = {
       id: user_id,
       name: user_name,
-      token: loginData.value.email
+      email: loginData.value.email
     }
 
     // 儲存到 localStorage
@@ -46,6 +46,7 @@ const handleLogin = async () => {
     // 清除舊的單獨存的資料（如果有的話）
     localStorage.removeItem('userId') 
     localStorage.removeItem('userName')
+
 
     alert(`🎉 歡迎回來，${user_name}！`)
     

@@ -6,6 +6,9 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000', // 👈 請確認這是你後端的網址
   timeout: 200000, // 可選的請求超時設定
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // 2.【請求攔截器】自動帶上 Token

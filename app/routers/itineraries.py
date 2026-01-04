@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from pydantic import BaseModel
 import uuid
+from sqlalchemy import or_
 
 from ..database import get_db
 from .. import models, schemas
@@ -25,11 +26,13 @@ class SpotData(BaseModel):
 class SaveAiTripRequest(BaseModel):
     title: str
     spots: List[SpotData]
+    user_id: str
 
 # 2. 加入單一景點用的
 class ItemAdd(BaseModel):
     spot_id: str
     day: Optional[int] = 1 # 預設加到第一天，或之後擴充用
+
 
 # ==========================================
 # API 實作
@@ -63,7 +66,12 @@ def list_itineraries(
 def get_user_itineraries(user_id: str, db: Session = Depends(get_db)):
     itineraries = db.query(models.Itinerary)\
         .options(joinedload(models.Itinerary.spots).joinedload(models.ItinerarySpot.spot))\
-        .filter(models.Itinerary.owner_user_id == user_id)\
+        .filter(
+            or_(
+                models.Itinerary.owner_user_id == user_id,  # 條件 A: 我建立的
+                models.Itinerary.collaborators.any(models.User.id == user_id) # 條件 B: 我在協作名單裡的
+            )
+        )\
         .order_by(models.Itinerary.created_at.desc())\
         .all()
     
@@ -134,20 +142,42 @@ def create_itinerary(payload: schemas.ItineraryCreate, db: Session = Depends(get
 # 5. [加入景點]
 @router.post("/{itinerary_id}/add_spot")
 def add_spot_to_itinerary(itinerary_id: str, data: ItemAdd, db: Session = Depends(get_db)):
-    last_item = db.query(models.ItinerarySpot).filter(models.ItinerarySpot.itinerary_id == itinerary_id)\
-                  .order_by(models.ItinerarySpot.day_order.desc()).first()
-                  
-    new_order = (last_item.day_order + 1) if last_item and last_item.day_order is not None else 0
+    # 1. 檢查行程是否存在
+    itinerary = db.query(models.Itinerary).filter(models.Itinerary.id == itinerary_id).first()
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="找不到該行程")
 
-    new_item = models.ItinerarySpot(
+    # 檢查是否為行程擁有者
+   #if itinerary.owner_user_id != request:
+    #     raise HTTPException(status_code=403, detail="您沒有權限")
+
+    # 2. 檢查景點是否存在
+    spot = db.query(models.Spot).filter(models.Spot.id == data.spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="找不到該景點")
+
+    # 3. 檢查是否已經加過了 (查詢中間表)
+    # 我們去 ItinerarySpot 表裡面找，看有沒有 (itinerary_id, spot_id) 的組合
+    exists = db.query(models.ItinerarySpot).filter(
+        models.ItinerarySpot.itinerary_id == itinerary_id,
+        models.ItinerarySpot.spot_id == data.spot_id
+    ).first()
+
+    if exists:
+        raise HTTPException(status_code=400, detail="這個景點已經在行程裡囉！")
+
+    # 4. 建立關聯物件 (因為是 Association Object 模式)
+    new_relation = models.ItinerarySpot(
         itinerary_id=itinerary_id,
         spot_id=data.spot_id,
-        day_order=new_order,
-        note=""
+        day_order=data.day, # 預設第一天，之後可以在前端改
+        note=""      # 預設空筆記
     )
-    db.add(new_item)
+
+    db.add(new_relation)
     db.commit()
-    return {"message": "Success"}
+    
+    return {"message": "成功加入行程", "spot_name": spot.name}
 
 # 6. [更新排序] (User.vue 拖曳排序用)
 @router.post("/{itinerary_id}/reorder")
@@ -192,11 +222,7 @@ def delete_itinerary(itinerary_id: str, db: Session = Depends(get_db)):
 
 # 9. [AI 轉存行程] 
 @router.post("/from_ai")
-async def create_itinerary_from_ai(
-    request: SaveAiTripRequest, 
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(get_current_user)
-):
+def create_itinerary_from_ai(request: SaveAiTripRequest, db: Session = Depends(get_db)):
     try:
         # 1. 建立一個新的行程表
         new_itinerary = models.Itinerary(
@@ -204,7 +230,7 @@ async def create_itinerary_from_ai(
             code=str(uuid.uuid4())[:8].upper(), # 簡單產生 Code
             title=request.title,
             budget=0,
-            owner_user_id=current_user.id
+            owner_user_id=request.user_id
         )
         db.add(new_itinerary)
         db.flush()
@@ -218,7 +244,7 @@ async def create_itinerary_from_ai(
                 new_link = models.ItinerarySpot(
                     itinerary_id=new_itinerary.id,
                     spot_id=db_spot.id,
-                    day_order=index, # 使用 index 確保順序與 AI 列表一致
+                    day_order=index + 1, # 使用 index 確保順序與 AI 列表一致
                     note=spot_data.description
                 )
                 db.add(new_link)

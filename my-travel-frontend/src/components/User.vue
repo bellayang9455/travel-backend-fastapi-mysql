@@ -232,6 +232,14 @@ const formatDate = (dateString) => {
   if (!dateString) return '未設定';
   return new Date(dateString).toLocaleDateString();
 };
+
+const copyCode = (code) => {
+  navigator.clipboard.writeText(code).then(() => {
+    alert(`已複製邀請碼：${code} \n趕快傳給朋友加入協作吧！`)
+  }).catch(() => {
+    alert('複製失敗，請手動複製')
+  })
+}
 </script>
 
 <template>
@@ -314,6 +322,10 @@ const formatDate = (dateString) => {
                     <div class="itin-info">
                         <h4>{{ itin.title }}</h4>
                         <span class="badge">{{ itin.spots ? itin.spots.length : 0 }} 個景點</span>
+                        <div class="invite-code-display" @click.stop>
+                            🔑 邀請碼：<span class="code-text">{{ itin.code }}</span>
+                            <button class="btn-copy" @click="copyCode(itin.code)">複製</button>
+                        </div>
                     </div>
                     <button @click.stop="deleteItinerary(itin.id)" class="btn-delete-itin">🗑️</button>
                 </div>
@@ -362,8 +374,8 @@ const formatDate = (dateString) => {
 
 <style scoped>
 /* 樣式保持不變，直接沿用您原本的 CSS */
-.user-page-container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; color: var(--text-color); }
-.grid-layout { display: grid; grid-template-columns: 350px 1fr; gap: 30px; align-items: start; }
+.user-page-container { max-width: 1400px; width: 95%; margin: 0 auto; padding: 30px 20px; color: var(--text-color); }
+.grid-layout { display: grid; grid-template-columns: 280px 1fr; gap: 30px; align-items: start; }
 @media(max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
 .profile-card, .card, .itin-card, .create-itin-card { background: var(--card-bg); padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px var(--shadow-color); }
 .info-group, .form-group { margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
@@ -384,8 +396,13 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .itin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .btn-add-itin { background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
 .btn-submit-itin { margin-top: 20px; }
-.itin-list { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-.itin-card { min-width: 200px; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); transition: all 0.2s; }
+.itin-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+.itin-card { width: 100%; box-sizing: border-box; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); transition: all 0.2s; }
+@media (max-width: 600px) {
+  .itin-list {
+    grid-template-columns: 1fr;
+  }
+}
 .itin-card:hover { transform: translateY(-3px); }
 .itin-card.active { border-color: var(--primary-color); background: rgba(76, 175, 80, 0.1); }
 .itin-info h4 { margin: 0 0 5px 0; color: var(--text-color); }
@@ -408,4 +425,39 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .empty-hint, .no-selection, .empty-spots { text-align: center; color: var(--text-secondary); padding: 30px; border: 2px dashed var(--border-color); border-radius: 12px; }
 .loading, .error { text-align: center; margin-top: 50px; font-size: 1.2rem; color: var(--text-secondary); }
 .error { color: #e74c3c; }
+.invite-code-display {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #666;
+    background: rgba(0,0,0,0.03);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-flex; /* 讓它變成一行 */
+    align-items: center;
+    gap: 5px;
+}
+
+.code-text {
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    user-select: all; /* 讓使用者點一下就能全選文字 */
+}
+
+.btn-copy {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
 </style>

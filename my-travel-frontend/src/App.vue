@@ -1,131 +1,81 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
-import RegisterForm from './components/RegisterForm.vue'
-import Login from './components/Login.vue' 
-import User from './components/User.vue'
-import SpotForm from './components/SpotForm.vue'
-import Home from './components/Home.vue' 
-import AIPlanner from './components/AIPlanner.vue'
 
-const currentPage = ref('home')
+const router = useRouter()
+const route = useRoute() // 用來監聽網址變化
 const isDarkMode = ref(false)
 const user = ref(null)
-const currentCategory = ref('全部');
 
-// 紀錄原本要跳轉的頁面
-const redirectPage = ref('')
-
-// 切換頁面
+// --- 導航邏輯 ---
+// Navbar 傳來的 pageName 是舊的字串 ('home', 'add'...)
+// 我們要把它轉成路由的 name，然後用 router.push 跳轉
 const switchPage = (pageName) => {
-  // 如果從 AI 行程規劃跳轉到登入或註冊，記錄要回到 AI 頁面
-  if (currentPage.value === 'ai_planner' && (pageName === 'login' || pageName === 'register')) {
-     redirectPage.value = 'ai_planner'
-  } else if (pageName === 'home') {
-     // 如果回到首頁，就清空紀錄
-     redirectPage.value = ''
+  const routeMap = {
+    'home': 'home',
+    'add': 'add',
+    'register': 'register',
+    'login': 'login',
+    'user': 'user',
+    'ai_planner': 'ai-planner' // 注意這裡對應 router/index.js 裡的 name
   }
-
-  currentPage.value = pageName
-  window.scrollTo({top: 0, behavior: 'smooth'})
+  
+  const targetRoute = routeMap[pageName] || 'home'
+  router.push({ name: targetRoute })
 }
 
-// 處理篩選 (如果您的 Home.vue 有實作接收這個 prop，可以傳進去，這裡先保留 console)
-const handleFilter = (location) => {
-  console.log('篩選地點:', location)
-}
-
-// 處理登入成功
+// --- 登入成功處理 ---
 const handleLoginSuccess = (userData) => {
-  // 如果 Login 元件回傳了 user 資料，直接使用
   if (userData) {
-    user.value = userData;
-    localStorage.setItem('user', JSON.stringify(userData));
-  } else {
-    // 否則從 localStorage 讀取
-    const storeUser = localStorage.getItem('user');
-    if (storeUser) {
-      user.value = JSON.parse(storeUser);
-    }
+    user.value = userData
+    localStorage.setItem('user', JSON.stringify(userData))
   }
-
-  if (redirectPage.value) {
-     switchPage(redirectPage.value); // 跳回剛剛的頁面 (AI)
-     redirectPage.value = ''; // 清空紀錄
-  } else {
-     switchPage('home'); // 預設跳回首頁
-  }
+  
+  // 登入後，看有沒有要「回到原本想去的頁面」
+  // (Vue Router 通常用 query 參數處理 redirect，這裡我們先簡單跳回首頁或 User 頁)
+  router.push({ name: 'home' })
 }
 
-const handleCategorySelect = (category) => {
-  currentCategory.value = category; // 更新分類
-  switchPage('home'); // 確保切換回首頁
-};
-
-// 處理登出 (Navbar 觸發)
+// --- 登出處理 ---
 const handleLogout = () => {
-    user.value = null;
-    localStorage.removeItem('user');
-    localStorage.removeItem('token'); // 如果有存 token 也要清
-    switchPage('login');
+  user.value = null
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+  localStorage.removeItem('user_name')
+  localStorage.removeItem('user_id')
+  alert('已登出')
+  router.push({ name: 'login' })
 }
 
-// 切換主題模式
+// --- 主題切換 ---
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
 }
 
-// 網頁載入時讀取設定
+// --- 初始化 ---
 onMounted(() => {
   // 1. 讀取主題
   const savedTheme = localStorage.getItem('theme')
-  if (savedTheme === 'dark') {
-    isDarkMode.value = true
-  }
+  if (savedTheme === 'dark') isDarkMode.value = true
   
   // 2. 讀取使用者
-  const token = localStorage.getItem('token');
-  const storeUser = localStorage.getItem('user');         // 情況A：完整的 JSON
-  const storeUserName = localStorage.getItem('user_name'); // 情況B：單獨的名字 (註冊時存的)
-  const storeUserId = localStorage.getItem('user_id');     // 情況B：單獨的 ID
-
-  // 只有當 Token 存在時，才代表真正登入
-  if (token) {
-    if (storeUser) {
-      // 情況 A：如果有完整的 user 物件 (通常是 Login.vue 存的)
-      try {
-        user.value = JSON.parse(storeUser);
-      } catch (e) {
-        console.error("User data parse error", e);
-        localStorage.removeItem('user');
-      }
-    } else if (storeUserName) {
-      // ✨ 情況 B：如果沒有 user 物件，但有 user_name (這是 RegisterForm 剛剛存的！)
-      user.value = {
-        name: storeUserName,
-        id: storeUserId || ''
-      };
+  const token = localStorage.getItem('token')
+  const storeUser = localStorage.getItem('user')
+  
+  if (token && storeUser) {
+    try {
+      user.value = JSON.parse(storeUser)
+    } catch (e) {
+      console.error("User parse error", e)
     }
   }
-
-  // 3. 如果已登入，您原本的邏輯是跳轉到 User 頁，這裡保留您的設定
-  // (通常一般網站會預設留首頁，但這裡照您的需求)
-  if(localStorage.getItem('token') && user.value) {
-    // currentPage.value = 'user'; 
-  }
 })
 
-// 監聽主題變化
+// 監聽主題
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
-})
-
-// 監聽 user 狀態 (如果 user 變成 null，自動跳轉登入頁)
-watch(user, (newVal) => {
-  if(!newVal) {
-    // currentPage.value = 'login'; 
-  }
 })
 </script>
 
@@ -133,55 +83,31 @@ watch(user, (newVal) => {
   <div class="app-wrapper" :class="{'dark-mode': isDarkMode }">
     
     <Navbar 
-      :activePage="currentPage" 
+      :activePage="route.name" 
       :isDarkMode="isDarkMode"
       :user-name="user ? user.name : ''"
+      :user-id="user ? user.id : ''"
+      :isLoggedIn="!!user"
       @changePage="switchPage"
-      @filterLocation="handleFilter"  
       @toggleTheme="toggleTheme"
       @logout="handleLogout"
-      @selectCategory="handleCategorySelect"
     />
 
     <main class="content-area">
-      
-      <div v-if="currentPage === 'home'">
-        <Home 
+      <router-view v-slot="{ Component }">
+        <keep-alive include="AIPlanner">
+          <component 
+            :is="Component" 
             :user="user"
-            :initialCategory="currentCategory"
-         />
-      </div>
+            :isLoggedIn="!!user"
+            @loginSuccess="handleLoginSuccess"
+            @registerSuccess="handleLoginSuccess"
+            @submitSuccess="() => router.push({ name: 'home' })"
+            @changePage="switchPage"
+          />
+        </keep-alive>
+      </router-view>
 
-      <div v-if="currentPage === 'add'">
-        <SpotForm @submitSuccess="switchPage('home')" />
-      </div>
-
-      <div v-if="currentPage === 'register'">
-        <RegisterForm 
-          @registerSuccess="handleLoginSuccess" 
-          @changePage="switchPage" 
-        />
-      </div>
-
-      <div v-if="currentPage === 'login'">
-        <Login @loginSuccess="handleLoginSuccess" />
-      </div>
-
-      <div v-if="currentPage === 'user'">
-        <User 
-            :user="user" 
-            @changePage="switchPage" 
-        />
-      </div>
-      
-      <KeepAlive>
-        <div v-if="currentPage === 'ai_planner'">
-            <AIPlanner 
-              :is-logged-in="!!user"
-              @changePage="switchPage"
-            />
-        </div>
-      </KeepAlive>
     </main>
   </div>
 </template>

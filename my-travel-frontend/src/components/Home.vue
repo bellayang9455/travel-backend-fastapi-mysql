@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter,useRoute } from 'vue-router';
 import api from '../api/axios.js'
 
 // --- 接收 App.vue 傳來的 user ---
@@ -7,7 +8,8 @@ const props = defineProps({
   user: Object,
   initialCategory: String
 })
-
+const route = useRoute();
+const router = useRouter();
 
 // --- 狀態變數 ---
 const spots = ref([])
@@ -63,14 +65,22 @@ const sortedSpots = computed(() => {
 // --- API 方法 ---
 
 // 1. 抓取景點
-const fetchSpots = async () => {
+const fetchSpots = async (keyword = '') => {
   loading.value = true
   errorMessage.value = ''
   try {
-    const response = await api.get(`/api/spots`) // 改用變數
+    // 帶上 query 參數 q
+    const response = await api.get(`/api/spots`, {
+        params: { q: keyword }
+    })
     spots.value = response.data
+    
     if (spots.value.length === 0) {
-      errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
+      if (keyword) {
+          errorMessage.value = `🔍 找不到與「${keyword}」相關的景點，試試別的關鍵字？`
+      } else {
+          errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
+      }
     }
   } catch (error) {
     console.error("抓不到資料:", error)
@@ -133,9 +143,21 @@ const addToItinerary = async () => {
 
 // --- 生命週期與監聽 ---
 onMounted(() => {
-  fetchSpots()
+  fetchSpots(route.query.q || '')
+  
   if (props.user) fetchUserItineraries()
 })
+
+// 監聽網址變化
+watch(
+  () => route.query.q,
+  (newKeyword) => {
+    // 如果搜尋關鍵字變了 (包含變回空字串)，就重新抓取
+    fetchSpots(newKeyword || '')
+    // 搜尋時建議把分類重置為全部，避免使用者以為沒搜到 (可選)
+    selectedCategory.value = '全部' 
+  }
+)
 
 // 監聽 initialCategory 變化
 watch(() => props.initialCategory, (newVal) => {
@@ -152,6 +174,10 @@ watch(() => props.user, (newUser) => {
     if (newUser) fetchUserItineraries();
     else itineraries.value = [];
 });
+
+const clearSearch = () => {
+    router.push({ name: 'home' }) // 這會清空網址參數，觸發上面的 watch
+}
 </script>
 
 <template>

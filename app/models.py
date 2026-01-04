@@ -35,8 +35,7 @@ class User(Base):
         secondary=collaborators_table, 
         back_populates="collaborators"
     )
-
-
+    
 class Itinerary(Base):
     __tablename__ = "itineraries"
 
@@ -62,7 +61,6 @@ class Itinerary(Base):
         back_populates="collaborating_itineraries"
     )
 
-
 class Spot(Base):
     __tablename__ = "spots"
 
@@ -82,7 +80,6 @@ class Spot(Base):
 
     reviews: Mapped[list["Review"]] = relationship(back_populates="spot")
     in_plans: Mapped[list["ItinerarySpot"]] = relationship(back_populates="spot", cascade="all, delete-orphan")
-
 
 class ItinerarySpot(Base):
     __tablename__ = "itinerary_spots"

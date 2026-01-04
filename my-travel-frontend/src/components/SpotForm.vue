@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import api from '../api/axios.js'
 
 const emit = defineEmits(['submitSuccess'])
@@ -13,31 +13,96 @@ const formData = ref({
   activitiesStr: ''
 })
 
+const nameError = ref('')     // 存放錯誤訊息
+const isChecking = ref(false) // 是否正在檢查中
+
+// 監聽名稱變化，進行檢查
+const checkName = async (name) => {
+  if (!name) {
+    nameError.value = ''
+    return
+  }
+  
+  try {
+    isChecking.value = true
+    // 呼叫後端我們剛剛寫好的 check_name API
+    const res = await api.get(`/api/spots/check_name`, {
+      params: { name }
+    })
+    
+    // 根據後端回傳的資料判斷
+    if (res.data.exists) {
+      const names = res.data.similar_names.join(', ')
+      
+      // 如果完全一樣，顯示「已存在」
+      if (res.data.similar_names.includes(name)) {
+          nameError.value = '⚠️ 這個景點已經存在囉！'
+      } else {
+          // 如果只是類似，顯示「發現類似」
+          nameError.value = `⚠️ 發現類似景點：${names}，確定要新增嗎？`
+      }
+    } else {
+      nameError.value = '' // 通過檢查，清空錯誤
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isChecking.value = false
+  }
+}
+let timeoutId = null
+
+watch(() => formData.value.name, (newVal) => {
+  // 先清空錯誤，讓使用者知道我們有在動作
+  if (!newVal) {
+      nameError.value = '';
+      return;
+  }
+  
+  // 清除上一次的計時器
+  if (timeoutId) clearTimeout(timeoutId)
+  
+  // 設定新的計時器
+  timeoutId = setTimeout(() => {
+    checkName(newVal)
+  }, 500) // 0.5 秒後執行
+})
+
 const submitData = async () => {
+  // 完全重複的名稱不允許新增
+  if (nameError.value.includes('已經存在')) {
+      alert("此景點已存在，請勿重複新增！")
+      return
+  }
+
+  // 如果有類似名稱，跳出確認視窗
+  if (nameError.value.includes('發現類似')) {
+      // 跳出確認視窗，如果使用者按「取消」，就擋下
+    const isConfirmed = confirm(`${nameError.value}\n\n(如果您確定這是不同的新景點，請按「確定」繼續)`)
+    if (!isConfirmed) {
+        return
+    }
+  }
+  // 基本防呆
   if (!formData.value.name.trim() || !formData.value.category || !formData.value.location.trim()) {
     alert('❌ 請填寫所有必填欄位 (名稱、分類、地點)！')
     return
   }
 
   try {
-    const featuresJson = {
-      features: formData.value.featuresStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
-    }
-    
-    const activitiesJson = {
-      activities: formData.value.activitiesStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
-    }
+    const featuresJson = formData.value.featuresStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
+    const activitiesJson = formData.value.activitiesStr.split(/[,，]/).map(s => s.trim()).filter(s => s)
 
     const payload = {
       name: formData.value.name,
       category: formData.value.category,
       location: formData.value.location,
       hours: formData.value.hours,
-      features: featuresJson,
-      activities: activitiesJson
+      features: featuresJson,    // 直接送 ['老街', '夜景']
+      activities: activitiesJson // 直接送 ['拍照', '逛街']
     }
 
-    await axios.post('http://127.0.0.1:8000/spots', payload)
+    await api.post('/api/spots', payload)
     
     alert('🎉 新增成功！')
     
@@ -48,8 +113,13 @@ const submitData = async () => {
     
     emit('submitSuccess') // 通知父元件新增成功
   } catch (error) {
-    alert('❌ 新增失敗，請檢查後端')
-    console.error(error)
+    if (error.response && error.response.status === 400) {
+        // 這會顯示後端回傳的 "這個景點已經存在囉！"
+        alert(`❌ 新增失敗：${error.response.data.detail}`) 
+    } else {
+        alert('❌ 新增失敗，請檢查後端')
+        console.error(error)
+    }
   }
 }
 </script>
@@ -68,7 +138,11 @@ const submitData = async () => {
           v-model="formData.name" 
           placeholder="例如：九份老街" 
           required
+          :class="{ 'input-error': nameError }"
         />
+
+        <span v-if="isChecking" class="checking-msg">🔍 檢查中...</span>
+        <span v-if="nameError" class="error-msg">{{ nameError }}</span>
       </div>
 
       <div class="input-group">
@@ -216,5 +290,25 @@ input:focus, select:focus {
 
 .submit-btn:hover {
   opacity: 0.9;
+}
+
+.input-error {
+  border-color: #ff4d4f !important;
+  background-color: #fff1f0 !important;
+}
+
+.error-msg {
+  color: #ff4d4f;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  display: block;
+  font-weight: bold;
+}
+
+.checking-msg {
+  color: #1890ff;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  display: block;
 }
 </style>

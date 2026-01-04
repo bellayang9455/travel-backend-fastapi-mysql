@@ -90,15 +90,13 @@ const handleRegister = async () => {
 
     const { access_token, user_id, user_name } = loginRes.data;
 
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('user_id', user_id);
-    localStorage.setItem('user_name', user_name);
-    
     const userData = {
-        id: user_id,
-        name: user_name,
-        email: registerData.value.email
+    id: user_id,
+    name: user_name,
+    email: registerData.value.email
     };
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(userData)); // 存成物件
 
     alert(`🎉 註冊成功！歡迎 ${user_name} 加入！`);
     emit('registerSuccess', userData);

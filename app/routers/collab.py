@@ -4,18 +4,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Itinerary, User
-# 👇 假設你有 auth.py 用來驗證使用者，如果路徑不同請修改
-from ..routers.auth import get_current_user 
+from pydantic import BaseModel
 
 router = APIRouter()
+
+class JoinTripRequest(BaseModel):
+    user_id: str
 
 # 1. 透過邀請碼加入行程
 @router.post("/join/{invite_code}")
 async def join_itinerary(
     invite_code: str, 
+    payload: JoinTripRequest,
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
 ):
+    # 根據 user_id 找使用者
+    current_user = db.query(User).filter(User.id == payload.user_id).first()
     # 根據 code 尋找行程
     itinerary = db.query(Itinerary).filter(Itinerary.code == invite_code).first()
     
@@ -41,11 +45,7 @@ async def join_itinerary(
 
 # 2. 查看某個行程的成員名單 (房主 + 協作者)
 @router.get("/members/{itinerary_id}")
-async def get_members(
-    itinerary_id: str, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user) # 只有登入者能看
-):
+async def get_members(itinerary_id: str, db: Session = Depends(get_db)):
     itinerary = db.query(Itinerary).filter(Itinerary.id == itinerary_id).first()
     if not itinerary:
         raise HTTPException(status_code=404, detail="行程不存在")
