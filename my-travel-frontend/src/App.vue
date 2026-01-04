@@ -85,13 +85,27 @@ onMounted(() => {
   }
   
   // 2. 讀取使用者
-  const storeUser = localStorage.getItem('user');
-  if (storeUser) {
-    try {
+  const token = localStorage.getItem('token');
+  const storeUser = localStorage.getItem('user');         // 情況A：完整的 JSON
+  const storeUserName = localStorage.getItem('user_name'); // 情況B：單獨的名字 (註冊時存的)
+  const storeUserId = localStorage.getItem('user_id');     // 情況B：單獨的 ID
+
+  // 只有當 Token 存在時，才代表真正登入
+  if (token) {
+    if (storeUser) {
+      // 情況 A：如果有完整的 user 物件 (通常是 Login.vue 存的)
+      try {
         user.value = JSON.parse(storeUser);
-    } catch (e) {
+      } catch (e) {
         console.error("User data parse error", e);
         localStorage.removeItem('user');
+      }
+    } else if (storeUserName) {
+      // ✨ 情況 B：如果沒有 user 物件，但有 user_name (這是 RegisterForm 剛剛存的！)
+      user.value = {
+        name: storeUserName,
+        id: storeUserId || ''
+      };
     }
   }
 
@@ -121,7 +135,7 @@ watch(user, (newVal) => {
     <Navbar 
       :activePage="currentPage" 
       :isDarkMode="isDarkMode"
-      :userName="user ? user.name : ''"
+      :user-name="user ? user.name : ''"
       @changePage="switchPage"
       @filterLocation="handleFilter"  
       @toggleTheme="toggleTheme"

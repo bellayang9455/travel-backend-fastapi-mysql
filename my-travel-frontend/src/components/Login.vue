@@ -33,20 +33,24 @@ const handleLogin = async () => {
 
     // 4. [關鍵] 將 userId 存入 localStorage
     // 這樣 User.vue 就能讀取到這個 ID，不用再寫死了
-    const userObject = {
+    const userData = {
       id: user_id,
       name: user_name,
       token: loginData.value.email
     }
 
+    // 儲存到 localStorage
     localStorage.setItem('token', access_token)
+    localStorage.setItem('user', JSON.stringify(userData))
+
+    // 清除舊的單獨存的資料（如果有的話）
     localStorage.removeItem('userId') 
     localStorage.removeItem('userName')
 
     alert(`🎉 歡迎回來，${user_name}！`)
     
     // 5. 發送事件通知 App.vue 切換頁面
-    emit('loginSuccess')
+    emit('loginSuccess',userData)
     
   } catch (error) {
     console.error(error)
@@ -95,7 +99,6 @@ const handleLogin = async () => {
       <button @click="handleLogin" class="submit-btn" :disabled="isLoading">
         {{ isLoading ? '登入中...' : '登入' }}
       </button>
-      
       </div>
   </div>
 </template>

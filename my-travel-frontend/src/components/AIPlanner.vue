@@ -80,6 +80,23 @@ const handleSaveToMyTrip = async () => {
     isSaving.value = false
   }
 }
+const getTransportIcon = (text) => {
+  if (!text) return '🚗'; // 預設值
+  
+  if (text.includes('步') || text.includes('走')) {
+    return '🚶';
+  } else if (text.includes('捷運') || text.includes('地鐵') || text.includes('鐵')) {
+    return '🚇';
+  } else if (text.includes('公車') || text.includes('巴士')) {
+    return '🚌';
+  } else if (text.includes('計程車') || text.includes('Uber') || text.includes('租車')) {
+    return '🚕';
+  } else if (text.includes('自行前往')) {
+    return '📍';
+  }
+  
+  return '🚗'; // 如果都沒比對到，就回傳車子
+}
 </script>
 
 <template>
@@ -130,7 +147,7 @@ const handleSaveToMyTrip = async () => {
         <div v-if="index > 0 && spot.transportation" class="transport-line">
           <div class="line"></div>
           <div class="trans-tag">
-             🚗 {{ spot.transportation }}
+             {{ getTransportIcon(spot.transportation) }} {{ spot.transportation }}
           </div>
           <div class="line"></div>
         </div>
@@ -140,6 +157,7 @@ const handleSaveToMyTrip = async () => {
           <p>{{ spot.description }}</p>
           <small>📍 {{ spot.address }}</small>
         </div>
+
       </div>
 
       <div class="action-buttons">

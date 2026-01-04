@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import api from '../api/axios.js'
+
+const emit = defineEmits(['submitSuccess'])
 
 const formData = ref({
   name: '',
@@ -44,6 +46,7 @@ const submitData = async () => {
       name: '', category: '', location: '', hours: '', featuresStr: '', activitiesStr: ''
     }
     
+    emit('submitSuccess') // 通知父元件新增成功
   } catch (error) {
     alert('❌ 新增失敗，請檢查後端')
     console.error(error)

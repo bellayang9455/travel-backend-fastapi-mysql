@@ -7,13 +7,15 @@ const props = defineProps({
   initialCategory: String
 })
 
+const emit = defineEmits(['changePage'])
+
 // --- 狀態變數 ---
-const spots = ref([])
-const itineraries = ref([]) // ✨ 修正這裡
+const spots = ref([]) // 景點列表
+const itineraries = ref([]) // 使用者的行程列表
 const loading = ref(true)
 const errorMessage = ref('')
 const sortBy = ref('newest') 
-const selectedCategory = ref('全部')
+const selectedCategory = ref('全部') // 預設分類
 
 const showAddModal = ref(false)
 const selectedSpotId = ref(null)
@@ -94,8 +96,12 @@ const openAddModal = (spotId) => {
     }
     if (itineraries.value.length === 0) {
         alert("您還沒有建立任何行程，請先去「個人頁面」建立一個行程吧！");
+        if (wantToCreate) {
+            // 使用者按「確定」，通知 App.vue 跳轉去 User 頁面
+            emit('changePage', 'user'); 
+        }
         return;
-    }
+      }
     
     selectedSpotId.value = spotId;
     if (itineraries.value.length > 0) {

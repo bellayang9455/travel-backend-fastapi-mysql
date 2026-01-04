@@ -1,18 +1,15 @@
 <script setup>
 import { ref, reactive, watch, computed } from 'vue';
-import axios from 'axios';
-// 引入拖曳套件
+import api from '../api/axios.js'; // 用封裝好的 api
 import draggable from 'vuedraggable';
-// 引入國碼資料
 import rawCountries from '../assets/countries_number.json'; 
 
-// --- 資料預處理 (保留您原本的邏輯) ---
+// --- 資料預處理 ---
 const countryCodes = rawCountries.map(item => {
-    // 從 "台灣 (+886)" 裡面抓出 "+886"
     const match = item.name.match(/\((.+?)\)/);
     return {
-        label: item.name,          // 顯示名稱："台灣 (+886)"
-        code: match ? match[1] : '' // 國碼："+886"
+        label: item.name, 
+        code: match ? match[1] : '' 
     };
 }).filter(item => item.code);
 
@@ -21,9 +18,6 @@ const emit = defineEmits(['changePage'])
 const props = defineProps({
   user: Object
 })
-
-// --- 設定區 ---
-const API_URL = "http://localhost:8000"; 
 
 // --- 狀態變數：使用者 ---
 const localUser = ref(null);    
@@ -34,7 +28,7 @@ const isEditing = ref(false);
 // --- 狀態變數：行程 ---
 const itineraries = ref([]);
 const activeItinerary = ref(null);
-const isCreatingItinerary = ref(false); // 控制新增行程表單開關
+const isCreatingItinerary = ref(false); 
 
 const currentUserId = computed(() => props.user ? props.user.id : null);
 
@@ -65,17 +59,17 @@ const fetchUser = async () => {
     loading.value = true;
     error.value = null;
     
-    // 1. 抓取個人資料
-    const response = await axios.get(`${API_URL}/users/${currentUserId.value}`);
+    // 2. 抓取使用者資料
+    const response = await api.get(`/api/users/${currentUserId.value}`);
     localUser.value = response.data;
 
-    // 2. 抓取行程列表
+    // 3. 抓取行程列表
     await fetchItineraries();
 
   } catch (err) {
     console.error(err);
     error.value = "無法取得資料，請確認後端是否啟動。";
-    if (err.response && (err.response.status === 404 || err.response.status === 401)) {
+    if (err.response && err.response.status === 401) {
         localStorage.clear();
         alert("登入已過期，請重新登入");
         emit('changePage', 'login'); 
@@ -88,16 +82,19 @@ const fetchUser = async () => {
 // --- 方法：行程管理 ---
 const fetchItineraries = async () => {
     try {
-        const res = await axios.get(`${API_URL}/itineraries/user/${currentUserId.value}`);
+        // 1. 抓取使用者的行程列表
+        const res = await api.get(`/api/itineraries/user/${currentUserId.value}`);
         itineraries.value = res.data;
         
-        // 如果目前有選中的行程，重新整理它的資料 (例如剛刪除景點後)
+        // 如果目前有選中的行程，重新整理它的資料
         if (activeItinerary.value) {
             const found = itineraries.value.find(i => i.id === activeItinerary.value.id);
             if (found) {
+                // 這裡要做一個深拷貝或者確保 spots 是按照 day_order 排序
+                // 後端 API 應該已經排好了
                 activeItinerary.value = found;
             } else {
-                activeItinerary.value = null; // 如果行程被刪了，清空選取
+                activeItinerary.value = null; 
             }
         }
     } catch (e) {
@@ -111,15 +108,14 @@ const createItinerary = async () => {
     try {
         const payload = {
             ...newItineraryForm,
-            owner_user_id: currentUserId.value
+            owner_user_id: currentUserId.value,
+            spot_ids: [] // 確保後端 schema 有這個欄位
         };
-        await axios.post(`${API_URL}/itineraries/`, payload);
+        await api.post(`/api/itineraries/`, payload);
         
         alert("行程建立成功！");
         isCreatingItinerary.value = false;
-        // 重置表單
         Object.assign(newItineraryForm, { title: '', budget: 0, travel_time: '', lodging: '', transport: '' });
-        // 重新抓取列表
         await fetchItineraries();
     } catch (e) {
         alert("建立失敗：" + (e.response?.data?.detail || e.message));
@@ -129,7 +125,7 @@ const createItinerary = async () => {
 const deleteItinerary = async (id) => {
     if (!confirm("確定要刪除此行程嗎？(無法復原)")) return;
     try {
-        await axios.delete(`${API_URL}/itineraries/${id}`);
+        await api.delete(`/api/itineraries/${id}`);
         await fetchItineraries();
     } catch (e) {
         alert("刪除失敗");
@@ -139,7 +135,7 @@ const deleteItinerary = async (id) => {
 const deleteSpotFromItinerary = async (itemId) => {
     if (!confirm("確定要從行程移除此景點嗎？")) return;
     try {
-        await axios.delete(`${API_URL}/itineraries/item/${itemId}`);
+        await api.delete(`/api/itineraries/item/${itemId}`);
         await fetchItineraries(); 
     } catch (e) {
         alert("移除失敗");
@@ -154,20 +150,21 @@ const selectItinerary = (itin) => {
 const onDragEnd = async () => {
     if (!activeItinerary.value) return;
     
+    // 準備 payload：只傳送 item_id 和 new_order
     const payload = activeItinerary.value.spots.map((item, index) => ({
-        item_id: item.id,
-        new_order: index
+        item_id: item.id,   // 這是關聯表 (itinerary_spots) 的 ID
+        new_order: index    // 新的順序
     }));
 
     try {
-        await axios.post(`${API_URL}/itineraries/${activeItinerary.value.id}/reorder`, payload);
+        await api.post(`/api/itineraries/${activeItinerary.value.id}/reorder`, payload);
         console.log("排序更新成功");
     } catch (e) {
         console.error("排序更新失敗", e);
     }
 };
 
-const getImageUrl = (id) => `https://picsum.photos/seed/${id}/200/150`; // 假圖
+const getImageUrl = (id) => `https://picsum.photos/seed/${id}/200/150`; 
 
 // --- Watch ---
 watch(() => props.user, (newVal) => {
@@ -180,7 +177,7 @@ watch(() => props.user, (newVal) => {
   } 
 }, { immediate: true });
 
-// --- 編輯個人資料邏輯 (保留原樣) ---
+// --- 編輯個人資料邏輯 ---
 const startEditing = () => {
   if (!localUser.value) {
     console.error("無法編輯，使用者尚未載入");
@@ -205,6 +202,7 @@ const startEditing = () => {
     formData.birthday = '';
   }
   
+  // 處理 likes (JSON)
   formData.likes = localUser.value.likes ? JSON.parse(JSON.stringify(localUser.value.likes)) : {};
   isEditing.value = true;
 };
@@ -220,7 +218,7 @@ const saveUser = async () => {
       birthday: formData.birthday ? new Date(formData.birthday).toISOString() : null,
       likes: formData.likes
     };
-    const response = await axios.put(`${API_URL}/users/${currentUserId.value}`, payload);
+    const response = await api.put(`/api/users/${currentUserId.value}`, payload);
     localUser.value = response.data;
     isEditing.value = false;
     alert("更新成功！");
@@ -363,18 +361,11 @@ const formatDate = (dateString) => {
 </template>
 
 <style scoped>
-/* 版面配置 */
+/* 樣式保持不變，直接沿用您原本的 CSS */
 .user-page-container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; color: var(--text-color); }
 .grid-layout { display: grid; grid-template-columns: 350px 1fr; gap: 30px; align-items: start; }
 @media(max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
-
-/* 通用卡片樣式 */
-.profile-card, .card, .itin-card, .create-itin-card { 
-    background: var(--card-bg); padding: 25px; border-radius: 16px; 
-    border: 1px solid var(--border-color); box-shadow: 0 4px 10px var(--shadow-color); 
-}
-
-/* 左欄：個人資料表單 */
+.profile-card, .card, .itin-card, .create-itin-card { background: var(--card-bg); padding: 25px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px var(--shadow-color); }
 .info-group, .form-group { margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
 label { display: block; font-weight: bold; margin-bottom: 8px; color: var(--text-secondary); }
 span { color: var(--text-color); font-size: 1.1rem; }
@@ -385,42 +376,26 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .phone-input { flex-grow: 1; }
 .tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { background-color: var(--input-bg); color: var(--primary-color); padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; border: 1px solid var(--border-color); }
-
-/* 按鈕樣式 */
 .btn-primary, .btn-save, .btn-cancel, .btn-submit-itin { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
 .btn-primary { background: var(--primary-color); color: white; }
 .btn-save { background: #2ecc71; color: white; }
 .btn-cancel { background: #e74c3c; color: white; }
 .button-group { display: flex; gap: 10px; }
-
-/* 右欄：行程管理 */
 .itin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .btn-add-itin { background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
 .btn-submit-itin { margin-top: 20px; }
-
-/* 行程列表 */
 .itin-list { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-.itin-card { 
-    min-width: 200px; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-    background: var(--input-bg); transition: all 0.2s;
-}
+.itin-card { min-width: 200px; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); transition: all 0.2s; }
 .itin-card:hover { transform: translateY(-3px); }
 .itin-card.active { border-color: var(--primary-color); background: rgba(76, 175, 80, 0.1); }
 .itin-info h4 { margin: 0 0 5px 0; color: var(--text-color); }
 .badge { background: #666; color: white; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; }
 .btn-delete-itin { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #aaa; }
 .btn-delete-itin:hover { color: #e74c3c; }
-
-/* 新增行程表單 */
 .create-itin-card { margin-bottom: 20px; background: var(--input-bg); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-/* 行程詳情 (拖曳區) */
 .drag-area { margin-top: 15px; }
-.spot-item { 
-    display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border-color);
-    padding: 10px; margin-bottom: 10px; border-radius: 8px; transition: background 0.2s;
-}
+.spot-item { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px; margin-bottom: 10px; border-radius: 8px; transition: background 0.2s; }
 .spot-item:hover { background: var(--input-bg); }
 .drag-handle { cursor: grab; padding: 0 10px; font-size: 1.5rem; color: #888; }
 .spot-thumb { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; margin-right: 15px; }
@@ -429,7 +404,6 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .spot-content p { margin: 3px 0 0; font-size: 0.9rem; color: var(--text-secondary); }
 .btn-remove-spot { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem; }
 .btn-remove-spot:hover { color: #e74c3c; }
-
 .divider { border: 0; height: 1px; background: var(--border-color); margin: 20px 0; }
 .empty-hint, .no-selection, .empty-spots { text-align: center; color: var(--text-secondary); padding: 30px; border: 2px dashed var(--border-color); border-radius: 12px; }
 .loading, .error { text-align: center; margin-top: 50px; font-size: 1.2rem; color: var(--text-secondary); }

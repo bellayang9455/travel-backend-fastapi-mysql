@@ -4,7 +4,7 @@ from ..models import User  # Assuming the User model is in .models
 from ..database import get_db  # Assuming you have a get_db dependency
 from ..schemas import UserOut, UserUpdate # Assuming Pydantic models are in .schemas
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 # 1. GET User by ID
 @router.get("/{user_id}", response_model=UserOut)

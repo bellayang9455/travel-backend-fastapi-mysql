@@ -29,7 +29,7 @@ class Token(BaseModel):
     user_id: str
     user_name: str
 
-# --- 🔥 重點新增：取得當前登入使用者 (驗證 Token) ---
+# --- 取得當前登入使用者 (驗證 Token) ---
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

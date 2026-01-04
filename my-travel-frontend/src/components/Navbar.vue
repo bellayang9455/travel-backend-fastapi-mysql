@@ -20,7 +20,7 @@ const emit = defineEmits([
 
 // --- 狀態變數 ---
 const isLoggedIn = computed(() => !!props.userName)
-const userName = ref('')
+const inviteCode = ref('')// 行程邀請碼的變數
 
 const handleJoinTrip = async () => {
   if (!inviteCode.value) return alert('請輸入邀請碼')
@@ -95,8 +95,13 @@ const handleLogout = () => {
     localStorage.removeItem('user_name')
     
     // 2. 跳轉回登入頁或首頁
+    emit('logout')
+    
     alert('已成功登出')
-    window.location.href = '/'
+    
+    if (props.activePage !== 'home') {
+       emit('changePage', 'home')
+    }
   }
 }
 </script>
@@ -276,6 +281,41 @@ const handleLogout = () => {
 }
 .dropdown-content a:hover { background-color: var(--bg-color); color: var(--primary-color); }
 
+.join-trip-box {
+  display: flex;
+  align-items: center;
+  background: var(--bg-color);
+  border-radius: 20px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  margin-right: 10px;
+}
+.join-trip-box input {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 14px;
+  width: 100px;
+  color: var(--text-color);
+  outline: none;
+}
+.join-trip-box button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  margin-right: 2px;
+}
+.join-trip-box button:hover {
+  transform: scale(1.1);
+}
 .action-area { display: flex; align-items: center; gap: 15px; }
 
 .theme-btn {
