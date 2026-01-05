@@ -1,4 +1,5 @@
 <script setup>
+// 首頁景點列表
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter,useRoute } from 'vue-router';
 import api from '../api/axios.js'

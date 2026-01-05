@@ -65,7 +65,11 @@ def list_itineraries(
 @router.get("/user/{user_id}", response_model=List[schemas.ItineraryOut])
 def get_user_itineraries(user_id: str, db: Session = Depends(get_db)):
     itineraries = db.query(models.Itinerary)\
-        .options(joinedload(models.Itinerary.spots).joinedload(models.ItinerarySpot.spot))\
+        .options(
+            joinedload(models.Itinerary.spots).joinedload(models.ItinerarySpot.spot),
+            joinedload(models.Itinerary.collaborators), # 抓取協作者
+            joinedload(models.Itinerary.owner)
+        )\
         .filter(
             or_(
                 models.Itinerary.owner_user_id == user_id,  # 條件 A: 我建立的

@@ -1,5 +1,6 @@
 // src/router/index.js
-
+// 關於 Vue Router 的設定檔案
+// 用來頁面之間的導航
 import { createRouter, createWebHistory } from 'vue-router'
 
 // 引入你的元件 (請確認路徑與檔名是否正確)

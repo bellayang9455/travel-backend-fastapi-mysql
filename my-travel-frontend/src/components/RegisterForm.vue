@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue'; // 引入 watch
+// 註冊
+import { ref } from 'vue'; 
 import api from '../api/axios.js';
 
 const emit = defineEmits(['registerSuccess', 'changePage'])

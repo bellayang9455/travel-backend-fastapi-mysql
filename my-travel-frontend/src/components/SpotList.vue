@@ -1,4 +1,5 @@
 <script setup>
+  // 舊版熱門景點列表
 import { ref, onMounted, computed, watch } from 'vue'
 import api from '../api/axios.js'
 

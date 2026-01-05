@@ -1,4 +1,5 @@
 <script setup>
+// App.vue 是整個應用的根組件，負責管理全局狀態如使用者登入狀態和主題切換
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'

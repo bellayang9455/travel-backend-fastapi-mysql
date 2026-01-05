@@ -1,4 +1,8 @@
+
 <script setup>
+//使用者個人頁面，包含個人資料編輯與行程管理功能
+
+// --- 匯入 ---
 import { ref, reactive, watch, computed } from 'vue';
 import api from '../api/axios.js'; // 用封裝好的 api
 import draggable from 'vuedraggable';
@@ -30,8 +34,10 @@ const itineraries = ref([]);
 const activeItinerary = ref(null);
 const isCreatingItinerary = ref(false); 
 
+// 紀錄目前使用者 ID
 const currentUserId = computed(() => props.user ? props.user.id : null);
 
+// --- 表單資料 ---
 const formData = reactive({
   name: '',
   phonePrefix: '+886', 
@@ -40,6 +46,7 @@ const formData = reactive({
   likes: {}
 });
 
+// 新行程表單
 const newItineraryForm = reactive({
     title: '',
     budget: 0,
@@ -102,6 +109,7 @@ const fetchItineraries = async () => {
     }
 };
 
+// 建立新行程
 const createItinerary = async () => {
     if (!newItineraryForm.title) return alert("請輸入行程名稱");
     
@@ -122,6 +130,7 @@ const createItinerary = async () => {
     }
 };
 
+// 刪除行程
 const deleteItinerary = async (id) => {
     if (!confirm("確定要刪除此行程嗎？(無法復原)")) return;
     try {
@@ -132,6 +141,7 @@ const deleteItinerary = async (id) => {
     }
 };
 
+// 從行程中移除景點
 const deleteSpotFromItinerary = async (itemId) => {
     if (!confirm("確定要從行程移除此景點嗎？")) return;
     try {
@@ -142,6 +152,7 @@ const deleteSpotFromItinerary = async (itemId) => {
     }
 };
 
+// 選擇行程
 const selectItinerary = (itin) => {
     activeItinerary.value = itin;
 };
@@ -166,7 +177,7 @@ const onDragEnd = async () => {
 
 const getImageUrl = (id) => `https://picsum.photos/seed/${id}/200/150`; 
 
-// --- Watch ---
+// --- 監聽使用者變化 ---
 watch(() => props.user, (newVal) => {
   if(newVal && newVal.id) {
     fetchUser();
@@ -207,8 +218,10 @@ const startEditing = () => {
   isEditing.value = true;
 };
 
+// 取消編輯
 const cancelEdit = () => { isEditing.value = false; };
 
+// 儲存使用者資料
 const saveUser = async () => {
   try {
     const fullPhone = `${formData.phonePrefix}${formData.phoneNumber}`;
@@ -228,11 +241,13 @@ const saveUser = async () => {
   }
 };
 
+// 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return '未設定';
   return new Date(dateString).toLocaleDateString();
 };
 
+// 複製邀請碼到剪貼簿
 const copyCode = (code) => {
   navigator.clipboard.writeText(code).then(() => {
     alert(`已複製邀請碼：${code} \n趕快傳給朋友加入協作吧！`)
@@ -326,6 +341,17 @@ const copyCode = (code) => {
                             🔑 邀請碼：<span class="code-text">{{ itin.code }}</span>
                             <button class="btn-copy" @click="copyCode(itin.code)">複製</button>
                         </div>
+                    </div>
+                    <div class="members-display">
+                        <div class="owner-tag" v-if="itin.owner">
+                            👑 {{ itin.owner.name }} (房主)
+                        </div>
+        
+                    <div v-if="itin.collaborators && itin.collaborators.length > 0" class="collab-list">
+                        <span v-for="user in itin.collaborators" :key="user.id" class="collab-tag">
+                            👤 {{ user.name }}
+                        </span>
+                    </div>
                     </div>
                     <button @click.stop="deleteItinerary(itin.id)" class="btn-delete-itin">🗑️</button>
                 </div>
@@ -459,5 +485,36 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     background: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+}
+.members-display {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.owner-tag {
+    font-size: 0.85rem;
+    background-color: #fff8e1; /* 淡黃色 */
+    color: #f57c00;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #ffe0b2;
+}
+
+.collab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.collab-tag {
+    font-size: 0.85rem;
+    background-color: #e3f2fd; /* 淡藍色 */
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #bbdefb;
 }
 </style>

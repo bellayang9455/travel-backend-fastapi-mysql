@@ -1,8 +1,12 @@
 <script setup>
+// 關於上方選單列的邏輯
+
+// --- 匯入 ---
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/axios.js'
 
+// --- 屬性與事件 ---
 const props = defineProps({
   activePage: String,
   isDarkMode: Boolean,
@@ -10,6 +14,7 @@ const props = defineProps({
   userId: String
 })
 
+// 定義要發出的事件
 const emit = defineEmits([
   'changePage', 
   'filterLocation', 
@@ -20,6 +25,7 @@ const emit = defineEmits([
   'logout'
 ])
 
+// --- 變數 ---
 const router = useRouter(); // 取得 router 實例
 const searchQuery = ref(''); // 搜尋關鍵字
 
@@ -27,6 +33,7 @@ const searchQuery = ref(''); // 搜尋關鍵字
 const isLoggedIn = computed(() => !!props.userName)
 const inviteCode = ref('')// 行程邀請碼的變數
 
+// --- 行程協作加入 ---
 const handleJoinTrip = async () => {
   if (!inviteCode.value) return alert('請輸入邀請碼')
   if (!props.userId) {

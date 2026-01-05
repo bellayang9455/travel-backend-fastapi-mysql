@@ -1,4 +1,6 @@
 <script setup>
+
+// 新增景點
 import { ref, watch } from 'vue'
 import api from '../api/axios.js'
 

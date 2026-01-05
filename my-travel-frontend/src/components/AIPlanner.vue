@@ -1,4 +1,5 @@
 <script setup>
+// AI 行程規劃元件
 import { ref } from 'vue'
 import api from '../api/axios.js' // 引用設定好的 api
 

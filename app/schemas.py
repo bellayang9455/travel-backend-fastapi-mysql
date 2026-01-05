@@ -28,7 +28,13 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+class UserBasic(BaseModel):
+    id: str
+    name: Optional[str] = None
+    email: str
 
+    class Config:
+        from_attributes = True
 # ----- Spot -----
 
 class SpotBase(BaseModel):
@@ -82,6 +88,8 @@ class ItineraryOut(ItineraryBase):
     owner_user_id: str
     created_at: datetime
     spots: List[ItinerarySpotOut] = []
+    owner: Optional[UserBasic] = None        # 房主資訊
+    collaborators: List[UserBasic] = []  # 協作者資訊
 
     class Config:
         from_attributes = True
