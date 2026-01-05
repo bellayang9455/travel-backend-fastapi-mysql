@@ -8,9 +8,18 @@ class UserBase(BaseModel):
     email: str
     name: Optional[str] = None
     phone: Optional[str] = None
+    birthday: Optional[datetime] = None
+    likes: Optional[Any] = None
 
 class UserCreate(UserBase):
     password: str = Field(min_length=4)
+    
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    birthday: Optional[datetime] = None
+    likes: Optional[Any] = None
+    password: Optional[str] = Field(None, min_length=4)
 
 class UserOut(UserBase):
     id: str
@@ -19,7 +28,13 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+class UserBasic(BaseModel):
+    id: str
+    name: Optional[str] = None
+    email: str
 
+    class Config:
+        from_attributes = True
 # ----- Spot -----
 
 class SpotBase(BaseModel):
@@ -54,10 +69,15 @@ class ItineraryCreate(ItineraryBase):
     owner_user_id: str
     spot_ids: List[str] = []
 
-class ItinerarySpotInfo(BaseModel):
-    spot_id: str
-    day_order: Optional[int] = None
+class ItineraryItemUpdate(BaseModel):
+    item_id: int
+    new_order: int
+
+class ItinerarySpotOut(BaseModel):
+    id : int
+    day_order: int
     note: Optional[str] = None
+    spot: SpotOut
 
     class Config:
         from_attributes = True
@@ -67,7 +87,9 @@ class ItineraryOut(ItineraryBase):
     code: str
     owner_user_id: str
     created_at: datetime
-    spots: List[SpotOut] = []
+    spots: List[ItinerarySpotOut] = []
+    owner: Optional[UserBasic] = None        # 房主資訊
+    collaborators: List[UserBasic] = []  # 協作者資訊
 
     class Config:
         from_attributes = True

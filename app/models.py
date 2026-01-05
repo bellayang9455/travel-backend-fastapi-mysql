@@ -1,7 +1,17 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON, Float, Table
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from datetime import datetime
+from datetime import datetime, timedelta
 from .database import Base
+
+def taiwan_time():
+    return datetime.utcnow() + timedelta(hours=8)
+
+collaborators_table = Table(
+    "collaborators",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+    Column("itinerary_id", ForeignKey("itineraries.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -14,14 +24,18 @@ class User(Base):
     birthday: Mapped[datetime | None] = mapped_column(DateTime)
     likes: Mapped[dict | None] = mapped_column(JSON)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time, onupdate=taiwan_time)
 
     itineraries: Mapped[list["Itinerary"]] = relationship(back_populates="owner")
     reviews: Mapped[list["Review"]] = relationship(back_populates="user")
     travel_records: Mapped[list["TravelRecord"]] = relationship(back_populates="user")
-
-
+    
+    collaborating_itineraries: Mapped[list["Itinerary"]] = relationship(
+        secondary=collaborators_table, 
+        back_populates="collaborators"
+    )
+    
 class Itinerary(Base):
     __tablename__ = "itineraries"
 
@@ -36,12 +50,16 @@ class Itinerary(Base):
     owner_user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     owner: Mapped["User"] = relationship(back_populates="itineraries")
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=taiwan_time, onupdate=taiwan_time)
 
     spots: Mapped[list["ItinerarySpot"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
     travel_records: Mapped[list["TravelRecord"]] = relationship(back_populates="itinerary", cascade="all, delete-orphan")
-
+    
+    collaborators: Mapped[list["User"]] = relationship(
+        secondary=collaborators_table, 
+        back_populates="collaborating_itineraries"
+    )
 
 class Spot(Base):
     __tablename__ = "spots"
@@ -53,6 +71,9 @@ class Spot(Base):
     location: Mapped[str | None] = mapped_column(String(100))
     hours: Mapped[str | None] = mapped_column(String(100))
     activities: Mapped[dict | None] = mapped_column(JSON)
+    
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -60,12 +81,12 @@ class Spot(Base):
     reviews: Mapped[list["Review"]] = relationship(back_populates="spot")
     in_plans: Mapped[list["ItinerarySpot"]] = relationship(back_populates="spot", cascade="all, delete-orphan")
 
-
 class ItinerarySpot(Base):
     __tablename__ = "itinerary_spots"
 
-    itinerary_id: Mapped[str] = mapped_column(String(36), ForeignKey("itineraries.id"), primary_key=True)
-    spot_id: Mapped[str] = mapped_column(String(36), ForeignKey("spots.id"), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    itinerary_id: Mapped[str] = mapped_column(String(36), ForeignKey("itineraries.id"), nullable=False)
+    spot_id: Mapped[str] = mapped_column(String(36), ForeignKey("spots.id"), nullable=False)
     day_order: Mapped[int | None] = mapped_column(Integer)
     note: Mapped[str | None] = mapped_column(String(255))
 

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import Base, engine, SessionLocal
 from .seed_data import seed
-from .routers import health, spots, itineraries, reviews, travel_records
+from .routers import health, spots, itineraries, reviews, travel_records, users, auth, ai_plan, collab
 
 # 建表
 Base.metadata.create_all(bind=engine)
@@ -13,6 +13,11 @@ with SessionLocal() as db:
     seed(db)
 
 app = FastAPI(title="Travel Backend (FastAPI + MySQL)")
+
+# 加上這段，讓根目錄 / 有東西可以回傳
+@app.get("/")
+def read_root():
+    return {"message": "恭喜！前端成功連上後端了！"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +29,11 @@ app.add_middleware(
 
 # routers
 app.include_router(health.router)
-app.include_router(spots.router)
-app.include_router(itineraries.router)
+app.include_router(spots.router,prefix="/api/spots")
+app.include_router(itineraries.router, prefix="/api/itineraries")
 app.include_router(reviews.router)
 app.include_router(travel_records.router)
+app.include_router(users.router, prefix="/api/users")
+app.include_router(auth.router,prefix="/auth")
+app.include_router(ai_plan.router, prefix="/api", tags=["AI Planner"])
+app.include_router(collab.router, prefix="/api/collab", tags=["Collaboration"])
