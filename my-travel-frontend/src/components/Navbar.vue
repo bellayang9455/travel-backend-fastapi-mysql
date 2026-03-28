@@ -335,16 +335,14 @@ const handleFilterClick = (type, value) => {
         <button class="theme-btn" @click="emit('toggleTheme')" title="切換風格">
           {{ isDarkMode ? '🌙' : '☀️' }}
         </button>
-      </div>
-    </header>
-
-    <aside class="sidebar" :class="{'is-open' : isSidebarOpen}">
-      <div class="sidebar-header">
-        <button class="hamburger-toggle-btn" @click="toggleSidebar">☰</button>
 
         <div class="header-right">
           <template v-if="isLoggedIn">
-            <div class="user-info">👤 {{ props.userName }}</div>
+            <button class="user-info"
+            @click="emit('changePage', 'user')"
+            title="查看個人資料">
+            👤 {{ props.userName }}
+          </button>
             <button class="logout-btn-small" @click="handleLogout" title="登出">登出🚪</button>
           </template>
           <template v-else>
@@ -354,6 +352,12 @@ const handleFilterClick = (type, value) => {
             </div>
           </template>
         </div>
+      </div>
+    </header>
+
+    <aside class="sidebar" :class="{'is-open' : isSidebarOpen}">
+      <div class="sidebar-header">
+        <button class="hamburger-toggle-btn" @click="toggleSidebar">☰</button>
       </div>
       <div class="sidebar-section" v-if="isLoggedIn">
         <div class="join-trip-box">

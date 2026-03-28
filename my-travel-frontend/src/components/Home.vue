@@ -187,6 +187,9 @@ const clearSearch = () => {
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
+        <span class="category-badge" v-if="selectedCategory !== '全部'">
+          {{ selectedCategory }}
+        </span>
         <span class="count" v-if="!errorMessage && !loading">共 {{ sortedSpots.length }} 個景點</span>
       </div>
       
@@ -288,7 +291,16 @@ const clearSearch = () => {
 .grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 @media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .grid-layout { grid-template-columns: repeat(1, 1fr); } }
-
+.category-badge {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-right: 10px;
+  display: inline-block;
+}
 /* 卡片與內容 */
 .card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #eee); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px var(--shadow-color, rgba(0,0,0,0.05)); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; display: flex; flex-direction: column; }
 .card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px var(--shadow-color, rgba(0,0,0,0.1)); }
