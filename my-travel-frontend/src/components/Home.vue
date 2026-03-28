@@ -4,7 +4,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter,useRoute } from 'vue-router';
 import api from '../api/axios.js'
 
-// --- 接收 App.vue 傳來的 user ---
+// 接收 App.vue 傳來的 user
 const props = defineProps({
   user: Object,
   initialCategory: String
@@ -12,7 +12,7 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 
-// --- 狀態變數 ---
+// 狀態變數
 const spots = ref([])
 const itineraries = ref([]) // 使用者的行程列表
 const loading = ref(true)
@@ -25,13 +25,13 @@ const showAddModal = ref(false)
 const selectedSpotId = ref(null)
 const selectedItineraryId = ref('')
 
-// --- 產生隨機圖片網址 ---
+// 產生隨機圖片網址
 const getImageUrl = (id) => {
   // 使用 picsum，id 當種子確保圖片固定
   return `https://picsum.photos/seed/${id}/400/300`
 }
 
-// --- 計算屬性：取得所有分類 ---
+// 計算屬性：取得所有分類
 const allCategories = computed(() => {
   // 1. 取得所有景點的分類
   const categories = spots.value.map(s => s.category || '未分類')
@@ -39,7 +39,7 @@ const allCategories = computed(() => {
   return ['全部', ...new Set(categories)]
 })
 
-// --- 計算屬性：排序邏輯 ---
+// 計算屬性：排序邏輯
 const sortedSpots = computed(() => {
   let list = [...spots.value]
 
@@ -63,7 +63,7 @@ const sortedSpots = computed(() => {
   return list
 })
 
-// --- API 方法 ---
+// API 方法
 
 // 1. 抓取景點
 const fetchSpots = async (keyword = '') => {
@@ -142,7 +142,7 @@ const addToItinerary = async () => {
     }
 };
 
-// --- 生命週期與監聽 ---
+// 生命週期與監聽
 onMounted(() => {
   fetchSpots(route.query.q || '')
   
@@ -273,7 +273,7 @@ const clearSearch = () => {
 </template>
 
 <style scoped>
-/* --- 保留您原本的所有樣式 --- */
+/* 保留您原本的所有樣式 */
 .spot-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color, #eee); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
 .header-left h2 { margin: 0; color: var(--text-color, #333); display: inline-block; margin-right: 10px;}

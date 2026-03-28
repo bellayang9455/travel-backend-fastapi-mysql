@@ -29,7 +29,7 @@ class Token(BaseModel):
     user_id: str
     user_name: str
 
-# --- 取得當前登入使用者 (驗證 Token) ---
+#  取得當前登入使用者 (驗證 Token) 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -54,7 +54,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
-# --- 1. 註冊 API (維持不變) ---
+#  1. 註冊 API (維持不變) 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user_in.email).first()
@@ -83,7 +83,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         print(f"Error creating user: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-# --- 2. 登入 API (維持不變) ---
+#  2. 登入 API (維持不變) 
 @router.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
@@ -102,7 +102,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         "user_name": user.name or user.email
     }
     
-# --- 3. 檢查名稱是否重複 API (維持不變) ---
+#  3. 檢查名稱是否重複 API (維持不變) 
 @router.get("/check_name/{name}")
 def check_name_exists(name: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.name == name).first()

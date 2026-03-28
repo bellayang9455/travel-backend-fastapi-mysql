@@ -162,6 +162,7 @@ const handleFilterClick = (type, value) => {
 }
 </script>
 
+//舊版
 <!--<template>
   <nav class="navbar">
     <div class="container">
@@ -311,6 +312,7 @@ const handleFilterClick = (type, value) => {
   </nav>
 </template>-->
 
+// 更改成漢堡選單 + 側邊欄的設計
 <template>
   <div class="nav-container">
 
@@ -323,7 +325,93 @@ const handleFilterClick = (type, value) => {
           <span class="title">旅遊GO GO GO!</span>
         </div>
       </div>
+
+      <div class="topbar-right">
+        <div class="search-bar">
+          <input v-model="searchQuery" @keyup.enter="handleSearch" placeholder="搜尋景點..." />
+          <button @click="handleSearch">🔍</button>
+        </div>
+
+        <button class="theme-btn" @click="emit('toggleTheme')" title="切換風格">
+          {{ isDarkMode ? '🌙' : '☀️' }}
+        </button>
+      </div>
     </header>
+
+    <aside class="sidebar" :class="{'is-open' : isSidebarOpen}">
+      <div class="sidebar-header">
+        <button class="hamburger-toggle-btn" @click="toggleSidebar">☰</button>
+
+        <div class="header-right">
+          <template v-if="isLoggedIn">
+            <div class="user-info">👤 {{ props.userName }}</div>
+            <button class="logout-btn-small" @click="handleLogout" title="登出">登出🚪</button>
+          </template>
+          <template v-else>
+            <div class="auth-buttons">
+              <button class="auth-btn login" @click="handleMenuClick('login')">登入</button>
+              <button class="auth-btn register" @click="handleMenuClick('register')">註冊</button>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="sidebar-section" v-if="isLoggedIn">
+        <div class="join-trip-box">
+          <input v-model="inviteCode" placeholder="輸入邀請碼加入行程" @keyup.enter="handleJoinTrip" />
+          <button @click="handleJoinTrip" title="加入行程">加入</button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        
+        <a class="nav-item ai-btn" :class="{ active: activePage === 'ai_planner' }" @click="handleMenuClick('ai_planner')">
+          ✨ AI 行程規劃
+        </a>
+
+        <a class="nav-item" :class="{ active: activePage === 'home' }" @click="handleMenuClick('home')">
+          🏠 首頁列表
+        </a>
+        
+        <a class="nav-item" :class="{ active: activePage === 'add' }" @click="handleMenuClick('add')">
+          📍 新增景點
+        </a>
+
+        <a class="nav-item" v-if="isLoggedIn" :class="{ active: activePage === 'user' }" @click="handleMenuClick('user')">
+          📅 我的行程 / 個人資料
+        </a>
+
+        <details class="nav-details">
+          <summary class="nav-item">🌍 探索地點</summary>
+          <div class="details-content">
+            <a @click="handleFilterClick('location', '')">全部地點</a>
+            <a v-for="loc in locations" :key="loc.value" @click="handleFilterClick('location', loc.value)">
+              {{ loc.name }}
+            </a>
+          </div>
+        </details>
+
+        <details class="nav-details">
+          <summary class="nav-item">🏷️ 景點分類</summary>
+          <div class="details-content">
+            <a @click="handleFilterClick('category', '全部')">所有分類</a>
+            <a v-for="cat in categories" :key="cat.value" @click="handleFilterClick('category', cat.value)">
+              {{ cat.name }}
+            </a>
+          </div>
+        </details>
+
+        <details class="nav-details">
+          <summary class="nav-item">🛏️ 住宿類型</summary>
+          <div class="details-content">
+             <a @click="handleFilterClick('accommodation', '')">全部住宿</a>
+             <a v-for="acc in accommodations" :key="acc.value" @click="handleFilterClick('accommodation', acc.value)">
+               {{ acc.name }}
+             </a>
+          </div>
+        </details>
+
+      </nav>
+    </aside>
   </div>
 </template>
 
@@ -345,6 +433,7 @@ const handleFilterClick = (type, value) => {
 .hamburger-btn {
   font-size: 24px; background: none; border: none; cursor: pointer;
   color: var(--text-color); padding: 5px; border-radius: 4px; transition: 0.2s;
+  margin: 0; display: flex; align-items: center;
 }
 .hamburger-btn:hover { background-color: var(--bg-color); }
 
@@ -364,7 +453,6 @@ const handleFilterClick = (type, value) => {
 }
 .theme-btn:hover { background-color: var(--bg-color); transform: rotate(15deg); }
 
-
 /* 側邊欄樣式 */
 .sidebar {
   position: fixed; top: 0; left: 0; width: 280px; height: 100vh;
@@ -374,17 +462,50 @@ const handleFilterClick = (type, value) => {
   overflow-y: auto; /* 內容太多可捲動 */
 }
 
-.sidebar.is-open { transform: translateX(0); }
+.sidebar.is-open { 
+  transform: translateX(0); 
+}
+
+.hamburger-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 24px; 
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin: 0;
+  margin-right: 15px; 
+  display: flex;
+  align-items: center;
+}
+
+.hamburger-toggle-btn:hover {
+  background-color: var(--bg-color); /* 簡單的灰色底色回饋即可 */
+}
 
 /* 側邊欄頂部 (使用者資訊) */
 .sidebar-header {
-  padding: 25px 20px; display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid var(--border-color); background-color: var(--bg-color);
+  height: 60px; 
+  padding: 0 20px; 
+  display: flex; 
+  justify-content: flex-start; 
+  align-items: center;
+  border-bottom: 1px solid var(--border-color); 
+  background-color: var(--bg-color);
+  box-sizing: border-box;
 }
 .user-info { display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--primary-color);}
 .logout-btn-small { background: none; border: none; cursor: pointer; font-size: 18px; transition: 0.2s; }
 .logout-btn-small:hover { transform: scale(1.1); }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1; 
+}
 .auth-buttons { display: flex; gap: 10px; width: 100%; }
 .auth-btn { flex: 1; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; border: 1px solid var(--primary-color); }
 .auth-btn.login { background: transparent; color: var(--primary-color); }

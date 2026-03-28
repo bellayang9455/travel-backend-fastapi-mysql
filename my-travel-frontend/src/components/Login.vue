@@ -1,14 +1,14 @@
 <script setup>
 // 關於使用者登入
 
-// --- 匯入 ---
+// 匯入
 import { ref } from 'vue'
 import api from '../api/axios.js'
 
 // 定義可以發送的事件，對應 App.vue 裡的 @loginSuccess
 const emit = defineEmits(['loginSuccess'])
 
-// --- 資料 ---
+// 資料
 const loginData = ref({
   email: '',
   password: ''
@@ -17,7 +17,7 @@ const loginData = ref({
 const isLoading = ref(false)
 
 
-// --- 登入檢查 ---
+// 登入檢查
 const handleLogin = async () => {
   // 1. 基本防呆
   if (!loginData.value.email || !loginData.value.password) {

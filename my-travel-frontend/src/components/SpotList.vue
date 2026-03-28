@@ -10,7 +10,7 @@ const props = defineProps({
 
 const emit = defineEmits(['changePage'])
 
-// --- 狀態變數 ---
+// 狀態變數
 const spots = ref([]) // 景點列表
 const itineraries = ref([]) // 使用者的行程列表
 const loading = ref(true)
@@ -22,7 +22,7 @@ const showAddModal = ref(false)
 const selectedSpotId = ref(null)
 const selectedItineraryId = ref('')
 
-// --- 產生隨機圖片網址 ---
+// 產生隨機圖片網址
 const getImageUrl = (id) => `https://picsum.photos/seed/${id}/400/300`
 
 const allCategories = computed(() => {
@@ -34,7 +34,7 @@ const setCategory = (cat) => {
   selectedCategory.value = cat;
 }
 
-// --- 計算屬性：排序與篩選 ---
+// 計算屬性：排序與篩選
 const sortedSpots = computed(() => {
   let list = [...spots.value]
 
@@ -52,7 +52,7 @@ const sortedSpots = computed(() => {
   return list
 })
 
-// --- API 方法 ---
+// API 方法
 const fetchSpots = async () => {
   loading.value = true
   errorMessage.value = ''

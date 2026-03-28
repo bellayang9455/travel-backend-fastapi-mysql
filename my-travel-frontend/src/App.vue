@@ -9,7 +9,7 @@ const route = useRoute() // 用來監聽網址變化
 const isDarkMode = ref(false)
 const user = ref(null)
 
-// --- 導航邏輯 ---
+// 導航邏輯  
 // Navbar 傳來的 pageName 是舊的字串 ('home', 'add'...)
 // 我們要把它轉成路由的 name，然後用 router.push 跳轉
 const switchPage = (pageName) => {
@@ -26,7 +26,7 @@ const switchPage = (pageName) => {
   router.push({ name: targetRoute })
 }
 
-// --- 登入成功處理 ---
+// 登入成功處理  
 const handleLoginSuccess = (userData) => {
   if (userData) {
     user.value = userData
@@ -38,7 +38,7 @@ const handleLoginSuccess = (userData) => {
   router.push({ name: 'home' })
 }
 
-// --- 登出處理 ---
+// 登出處理  
 const handleLogout = () => {
   user.value = null
   localStorage.removeItem('user')
@@ -49,13 +49,13 @@ const handleLogout = () => {
   router.push({ name: 'login' })
 }
 
-// --- 主題切換 ---
+// 主題切換  
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
 }
 
-// --- 初始化 ---
+// 初始化  
 onMounted(() => {
   // 1. 讀取主題
   const savedTheme = localStorage.getItem('theme')
