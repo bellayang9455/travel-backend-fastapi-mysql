@@ -48,25 +48,37 @@ def check_name_exists(name: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.SpotOut, status_code=201)
 def create_spot(payload: schemas.SpotCreate, db: Session = Depends(get_db)):
-    # 先檢查有沒有重複的景點名稱
+    # 1. 先檢查有沒有重複的景點名稱
     existing_spot = db.query(models.Spot).filter(models.Spot.name == payload.name).first()
     if existing_spot:
         raise HTTPException(status_code=400, detail="這個景點已經存在囉！")
-    # 手動產生 UUID
+        
+    # 2. 手動產生 UUID 與台灣時間
     new_id = str(uuid.uuid4())
-    
     tw_now = (datetime.now(timezone.utc) + timedelta(hours=8)).replace(tzinfo=None)
+    
+    # 3. 抓取經緯度，並呼叫函式自動計算洲際
+    # 使用 getattr 防呆，確保即使前端沒傳經緯度，程式也不會死當
+    lat = getattr(payload, 'latitude', None)
+    lon = getattr(payload, 'longitude', None)
+    calculated_region = get_region_by_coordinates(lat, lon)
+
+    # 4. 建立要存入資料庫的物件
     spot = models.Spot(
         id=new_id,
         name=payload.name,
         category=payload.category,
-        features=payload.features,   # 這裡會接收前端傳來的 JSON/Array
+        features=payload.features,   
         location=payload.location,
         hours=payload.hours,
-        activities=payload.activities, # 這裡會接收前端傳來的 JSON/Array
+        activities=payload.activities, 
+        latitude=lat,               # 緯度
+        longitude=lon,              # 經度
+        region=calculated_region,   # 存入自動算好的洲際
         created_at=tw_now
     )
     
+    # 5. 安全寫入資料庫
     try:
         db.add(spot)
         db.commit()
@@ -75,6 +87,40 @@ def create_spot(payload: schemas.SpotCreate, db: Session = Depends(get_db)):
         
     except Exception as e:
         db.rollback() # 發生錯誤要回滾，避免資料庫卡住
-        print(f"❌ Database Error: {e}") # 會印在終端機，方便你看錯誤原因
-        # 回傳 500 但帶有詳細訊息
+        print(f"❌ Database Error: {e}") 
         raise HTTPException(status_code=500, detail=f"新增景點失敗: {str(e)}")
+    
+def get_region_by_coordinates(lat: float, lon: float) -> str:
+    """
+    透過經緯度自動判斷所屬洲際
+    lat: 緯度 (-90 ~ 90)
+    lon: 經度 (-180 ~ 180)
+    """
+    if lat is None or lon is None:
+        return "Asia" # 防呆預設值
+
+    # 1. 美洲 (Americas): 經度大約在 -170 到 -30 之間
+    if -170 <= lon <= -30:
+        return "Americas"
+        
+    # 2. 歐洲與非洲 (Europe & Africa): 經度大約在 -20 到 60 之間
+    elif -20 <= lon <= 60:
+        # 以地中海附近 (緯度 35 度) 作為歐非粗略分界
+        if lat > 35:
+            return "Europe"
+        else:
+            return "Africa"
+            
+    # 3. 亞洲與大洋洲 (Asia & Oceania): 經度大約在 60 到 180 之間
+    elif 60 < lon <= 180:
+        # ✨ 特別拉出台灣的精準座標 (緯度 21.8~25.3, 經度 120~122)
+        if 21.8 <= lat <= 25.3 and 120 <= lon <= 122:
+            return "Taiwan"
+            
+        # 以赤道偏南 (緯度 -10 度，印尼下方) 作為亞洲與大洋洲分界
+        if lat > -10:
+            return "Asia"
+        else:
+            return "Oceania"
+
+    return "Asia" # 找不到的防呆預設

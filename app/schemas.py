@@ -44,6 +44,7 @@ class SpotBase(BaseModel):
     location: Optional[str] = None
     hours: Optional[str] = None
     activities: Optional[Any] = None
+    region: Optional[str] = None
 
 class SpotCreate(SpotBase):
     pass
