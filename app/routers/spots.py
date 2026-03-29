@@ -124,3 +124,31 @@ def get_region_by_coordinates(lat: float, lon: float) -> str:
             return "Oceania"
 
     return "Asia" # 找不到的防呆預設
+
+#更新資料用
+@router.get("/fix_regions")
+def fix_old_spots_regions(db: Session = Depends(get_db)):
+    """
+    這是一支一次性的工具 API，用來把資料庫裡舊的景點，
+    全部用經緯度重新計算一次 region 並存檔。
+    """
+    # 1. 抓出資料庫裡「所有的景點」
+    all_spots = db.query(models.Spot).all()
+    updated_count = 0
+    
+    # 2. 跑迴圈，一個一個幫它們算洲際
+    for spot in all_spots:
+        # 呼叫我們剛剛寫的魔法函式
+        calculated_region = get_region_by_coordinates(spot.latitude, spot.longitude)
+        
+        # 覆寫原本的 region (可能原本是 NULL 或預設的 Asia)
+        spot.region = calculated_region
+        updated_count += 1
+        
+    # 3. 一次把所有變更存進資料庫
+    try:
+        db.commit()
+        return {"message": f"🎉 太神啦！成功更新了 {updated_count} 筆舊景點的洲際分類！"}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
