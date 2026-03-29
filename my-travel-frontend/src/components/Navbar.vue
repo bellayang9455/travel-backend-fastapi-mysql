@@ -312,7 +312,7 @@ const handleFilterClick = (type, value) => {
   </nav>
 </template>-->
 
-// 更改成漢堡選單 + 側邊欄的設計
+// 更改成選單 + 側邊欄的設計
 <template>
   <div class="nav-container">
 
@@ -500,7 +500,7 @@ const handleFilterClick = (type, value) => {
   background-color: var(--bg-color);
   box-sizing: border-box;
 }
-.user-info { display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--primary-color);}
+.user-info { background: none; border: none; display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--primary-color);}
 .logout-btn-small { background: none; border: none; cursor: pointer; font-size: 18px; transition: 0.2s; }
 .logout-btn-small:hover { transform: scale(1.1); }
 
