@@ -9,7 +9,7 @@ const route = useRoute() // 用來監聽網址變化
 const isDarkMode = ref(false)
 const user = ref(null)
 
-// ✨ 新增：用來記住使用者目前在側邊欄選了什麼分類
+// 用來記住使用者目前在側邊欄選了什麼分類
 const currentCategory = ref('全部')
 
 // --- 導航邏輯 ---
@@ -27,7 +27,7 @@ const switchPage = (pageName) => {
   router.push({ name: targetRoute })
 }
 
-// ✨ 新增：接收 Navbar 傳來的分類點擊事件
+// 接收 Navbar 傳來的分類點擊事件
 const handleSelectCategory = (categoryName) => {
   currentCategory.value = categoryName
   switchPage('home') // 切換分類時，確保跳回首頁看結果
@@ -95,6 +95,7 @@ watch(isDarkMode, (newVal) => {
       @toggleTheme="toggleTheme"
       @logout="handleLogout"
       @selectCategory="handleSelectCategory" 
+      @filterLocation="handleFilterLocation"
       />
 
     <main class="content-area">

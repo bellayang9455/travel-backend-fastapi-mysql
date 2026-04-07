@@ -52,6 +52,11 @@ const sortedSpots = computed(() => {
     })
   }
 
+  //洲際別篩選
+  if (route.query.location) {
+    list = list.filter(spot => spot.region === route.query.location)
+  }
+
   if (sortBy.value === 'newest') {
     // 假設 id 越大越新，反轉陣列
     return list.reverse() 
@@ -179,6 +184,25 @@ watch(() => props.user, (newUser) => {
 const clearSearch = () => {
     router.push({ name: 'home' }) // 這會清空網址參數，觸發上面的 watch
 }
+
+// --- 處理 Navbar 傳來的地點篩選事件 ---
+const handleFilterLocation = (locationValue) => {
+  // 把目前的網址參數複製一份
+  const currentQuery = { ...route.query }
+
+  if (locationValue === '') {
+    // 如果點「全部地點」，就把 location 參數刪掉
+    delete currentQuery.location
+  } else {
+    // 否則就把點擊的洲際 (例如 'Europe') 放進參數裡
+    currentQuery.location = locationValue
+  }
+
+  // 透過 Vue Router 推送新網址
+  // 加上 path: '/' 確保如果使用者在其他頁面點擊側邊欄，會被強制帶回首頁看結果
+  router.push({ path: '/', query: currentQuery })
+}
+
 </script>
 
 <template>
