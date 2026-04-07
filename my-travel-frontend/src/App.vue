@@ -9,9 +9,10 @@ const route = useRoute() // 用來監聽網址變化
 const isDarkMode = ref(false)
 const user = ref(null)
 
+// ✨ 新增：用來記住使用者目前在側邊欄選了什麼分類
+const currentCategory = ref('全部')
+
 // --- 導航邏輯 ---
-// Navbar 傳來的 pageName 是舊的字串 ('home', 'add'...)
-// 我們要把它轉成路由的 name，然後用 router.push 跳轉
 const switchPage = (pageName) => {
   const routeMap = {
     'home': 'home',
@@ -19,11 +20,17 @@ const switchPage = (pageName) => {
     'register': 'register',
     'login': 'login',
     'user': 'user',
-    'ai_planner': 'ai-planner' // 注意這裡對應 router/index.js 裡的 name
+    'ai_planner': 'ai-planner'
   }
   
   const targetRoute = routeMap[pageName] || 'home'
   router.push({ name: targetRoute })
+}
+
+// ✨ 新增：接收 Navbar 傳來的分類點擊事件
+const handleSelectCategory = (categoryName) => {
+  currentCategory.value = categoryName
+  switchPage('home') // 切換分類時，確保跳回首頁看結果
 }
 
 // --- 登入成功處理 ---
@@ -32,9 +39,6 @@ const handleLoginSuccess = (userData) => {
     user.value = userData
     localStorage.setItem('user', JSON.stringify(userData))
   }
-  
-  // 登入後，看有沒有要「回到原本想去的頁面」
-  // (Vue Router 通常用 query 參數處理 redirect，這裡我們先簡單跳回首頁或 User 頁)
   router.push({ name: 'home' })
 }
 
@@ -57,11 +61,9 @@ const toggleTheme = () => {
 
 // --- 初始化 ---
 onMounted(() => {
-  // 1. 讀取主題
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') isDarkMode.value = true
   
-  // 2. 讀取使用者
   const token = localStorage.getItem('token')
   const storeUser = localStorage.getItem('user')
   
@@ -74,7 +76,7 @@ onMounted(() => {
   }
 })
 
-// 監聽主題
+// --- 監聽主題 ---
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
@@ -92,7 +94,8 @@ watch(isDarkMode, (newVal) => {
       @changePage="switchPage"
       @toggleTheme="toggleTheme"
       @logout="handleLogout"
-    />
+      @selectCategory="handleSelectCategory" 
+      />
 
     <main class="content-area">
       <router-view v-slot="{ Component }">
@@ -100,6 +103,7 @@ watch(isDarkMode, (newVal) => {
           <component 
             :is="Component" 
             :user="user"
+            :initialCategory="currentCategory" 
             :isLoggedIn="!!user"
             @loginSuccess="handleLoginSuccess"
             @registerSuccess="handleLoginSuccess"
@@ -108,13 +112,12 @@ watch(isDarkMode, (newVal) => {
           />
         </keep-alive>
       </router-view>
-
     </main>
   </div>
 </template>
 
 <style>
-/* 您的 CSS 樣式完全保持不變 */
+/* CSS 完全保持不變，不用動 */
 :root {
   --bg-color: #fafafa;
   --text-color: #2c3e50;
@@ -169,8 +172,6 @@ body {
   min-height: 100vh;
 }
 
-/* 如果您的 Home.vue 已經包含了 hero-header，這裡的樣式可以留著給 Home.vue 用，
-   或者如果 Home.vue 有 scoped style，這裡也可以保留作為全域預設值 */
 .hero-header {
   text-align: center;
   margin-bottom: 40px;

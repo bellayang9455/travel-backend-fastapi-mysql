@@ -23,7 +23,7 @@ const generatedItinerary = ref([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 
-// --- 呼叫 AI 生成行程 ---
+// 呼叫 AI 生成行程
 const generatePlan = async () => {
   if (!form.value.destination) return alert('請輸入地點！')
   
@@ -44,7 +44,7 @@ const generatePlan = async () => {
   }
 }
 
-// --- 儲存行程到資料庫 ---
+// 儲存行程到資料庫
 const handleSaveToMyTrip = async () => {
   // 1. 檢查登入狀態
   
@@ -205,7 +205,7 @@ button:disabled { background-color: #ccc; }
 .unit-text { position: absolute; right: 15px; color: #888; font-size: 14px; pointer-events: none; }
 .style-input { flex: 1; min-width: 150px; }
 
-/* --- 結果卡片樣式 --- */
+/* 結果卡片樣式 */
 .ai-card {
   background: #fff;
   border: 1px solid #eee;
@@ -221,7 +221,7 @@ button:disabled { background-color: #ccc; }
 
 .loading { text-align: center; color: #666; font-style: italic; margin-top: 20px; }
 
-/* --- ✨ 儲存按鈕樣式 --- */
+/* ✨ 儲存按鈕樣式 */
 .action-buttons { margin-top: 20px; text-align: center; padding-bottom: 20px; }
 
 .save-btn {

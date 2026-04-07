@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Any
 from datetime import datetime
 
-# ----- User -----
+# -- User --
 
 class UserBase(BaseModel):
     email: str
@@ -35,7 +35,7 @@ class UserBasic(BaseModel):
 
     class Config:
         from_attributes = True
-# ----- Spot -----
+# -- Spot --
 
 class SpotBase(BaseModel):
     name: str
@@ -44,6 +44,9 @@ class SpotBase(BaseModel):
     location: Optional[str] = None
     hours: Optional[str] = None
     activities: Optional[Any] = None
+    region: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class SpotCreate(SpotBase):
     pass
@@ -56,7 +59,7 @@ class SpotOut(SpotBase):
         from_attributes = True
 
 
-# ----- Itinerary -----
+# -- Itinerary --
 
 class ItineraryBase(BaseModel):
     title: str
@@ -95,7 +98,7 @@ class ItineraryOut(ItineraryBase):
         from_attributes = True
 
 
-# ----- Review -----
+# -- Review --
 
 class ReviewBase(BaseModel):
     stars: int
@@ -117,7 +120,7 @@ class ReviewOut(ReviewBase):
         from_attributes = True
 
 
-# ----- TravelRecord -----
+# -- TravelRecord --
 
 class TravelRecordBase(BaseModel):
     experience: Optional[str] = None

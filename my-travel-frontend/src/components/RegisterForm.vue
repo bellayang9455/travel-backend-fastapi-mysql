@@ -12,7 +12,7 @@ const registerData = ref({
   confirmPassword: ''
 });
 
-// --- 檢查名字相關狀態 ---
+// 檢查名字相關狀態
 const isChecking = ref(false);      // 是否正在檢查中 (轉圈圈)
 const nameAvailable = ref(null);    // null=未檢查, true=可用(綠色), false=不可用(紅色)
 const nameMsg = ref('');            // 顯示的訊息

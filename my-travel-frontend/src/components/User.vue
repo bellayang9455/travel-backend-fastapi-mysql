@@ -2,13 +2,13 @@
 <script setup>
 //使用者個人頁面，包含個人資料編輯與行程管理功能
 
-// --- 匯入 ---
+// 匯入
 import { ref, reactive, watch, computed } from 'vue';
 import api from '../api/axios.js'; // 用封裝好的 api
 import draggable from 'vuedraggable';
 import rawCountries from '../assets/countries_number.json'; 
 
-// --- 資料預處理 ---
+// 資料預處理
 const countryCodes = rawCountries.map(item => {
     const match = item.name.match(/\((.+?)\)/);
     return {
@@ -23,13 +23,13 @@ const props = defineProps({
   user: Object
 })
 
-// --- 狀態變數：使用者 ---
+// 狀態變數：使用者
 const localUser = ref(null);    
 const loading = ref(true);
 const error = ref(null);
 const isEditing = ref(false);
 
-// --- 狀態變數：行程 ---
+// 狀態變數：行程
 const itineraries = ref([]);
 const activeItinerary = ref(null);
 const isCreatingItinerary = ref(false); 
@@ -37,7 +37,7 @@ const isCreatingItinerary = ref(false);
 // 紀錄目前使用者 ID
 const currentUserId = computed(() => props.user ? props.user.id : null);
 
-// --- 表單資料 ---
+// 表單資料
 const formData = reactive({
   name: '',
   phonePrefix: '+886', 
@@ -55,7 +55,7 @@ const newItineraryForm = reactive({
     transport: ''
 });
 
-// --- 方法：使用者資料 ---
+// 方法：使用者資料
 const fetchUser = async () => {
   if (!currentUserId.value) {
     error.value = "您尚未登入，請先登入！";
@@ -86,7 +86,7 @@ const fetchUser = async () => {
   }
 };
 
-// --- 方法：行程管理 ---
+// 方法：行程管理
 const fetchItineraries = async () => {
     try {
         // 1. 抓取使用者的行程列表
@@ -177,7 +177,7 @@ const onDragEnd = async () => {
 
 const getImageUrl = (id) => `https://picsum.photos/seed/${id}/200/150`; 
 
-// --- 監聽使用者變化 ---
+// 監聽使用者變化
 watch(() => props.user, (newVal) => {
   if(newVal && newVal.id) {
     fetchUser();
@@ -188,7 +188,7 @@ watch(() => props.user, (newVal) => {
   } 
 }, { immediate: true });
 
-// --- 編輯個人資料邏輯 ---
+// 編輯個人資料邏輯
 const startEditing = () => {
   if (!localUser.value) {
     console.error("無法編輯，使用者尚未載入");
