@@ -260,3 +260,18 @@ def create_itinerary_from_ai(request: SaveAiTripRequest, db: Session = Depends(g
         db.rollback()
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=f"儲存行程失敗: {str(e)}")
+    
+@router.get("/{itinerary_id}/members")
+def get_itinerary_members(itinerary_id: str, db: Session = Depends(get_db)):
+    itinerary = db.query(models.Itinerary).filter(models.Itinerary.id == itinerary_id).first()
+    
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="找不到此行程")
+
+    # ✨ 核心魔法：把主揪和所有共編者的名字，塞進同一個陣列裡
+    members = [itinerary.owner.name] # 先放主揪
+    for user in itinerary.collaborators:
+        members.append(user.name)    # 把朋友也加進去
+        
+    return {"members": members} 
+    # 回傳結果會長這樣：{"members": ["你的名字", "朋友A", "朋友B"]}

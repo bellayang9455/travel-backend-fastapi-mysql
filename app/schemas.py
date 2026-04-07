@@ -3,7 +3,6 @@ from typing import Optional, List, Any
 from datetime import datetime
 
 # -- User --
-
 class UserBase(BaseModel):
     email: str
     name: Optional[str] = None
@@ -35,8 +34,8 @@ class UserBasic(BaseModel):
 
     class Config:
         from_attributes = True
-# -- Spot --
 
+# -- Spot --
 class SpotBase(BaseModel):
     name: str
     category: Optional[str] = None
@@ -60,7 +59,6 @@ class SpotOut(SpotBase):
 
 
 # -- Itinerary --
-
 class ItineraryBase(BaseModel):
     title: str
     budget: Optional[int] = None
@@ -99,7 +97,6 @@ class ItineraryOut(ItineraryBase):
 
 
 # -- Review --
-
 class ReviewBase(BaseModel):
     stars: int
     content: Optional[str] = None
@@ -121,7 +118,6 @@ class ReviewOut(ReviewBase):
 
 
 # -- TravelRecord --
-
 class TravelRecordBase(BaseModel):
     experience: Optional[str] = None
     cost_ticket: Optional[int] = None

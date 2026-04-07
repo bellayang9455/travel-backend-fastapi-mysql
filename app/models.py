@@ -94,7 +94,6 @@ class ItinerarySpot(Base):
     itinerary: Mapped["Itinerary"] = relationship(back_populates="spots")
     spot: Mapped["Spot"] = relationship(back_populates="in_plans")
 
-
 class Review(Base):
     __tablename__ = "reviews"
 
@@ -108,7 +107,6 @@ class Review(Base):
 
     user: Mapped["User"] = relationship(back_populates="reviews")
     spot: Mapped["Spot"] = relationship(back_populates="reviews")
-
 
 class TravelRecord(Base):
     __tablename__ = "travel_records"
@@ -125,3 +123,23 @@ class TravelRecord(Base):
 
     user: Mapped["User"] = relationship(back_populates="travel_records")
     itinerary: Mapped["Itinerary"] = relationship(back_populates="travel_records")
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    
+    # 1. 綁定行程：這筆帳是屬於哪一個行程的？
+    itinerary_id: Mapped[str] = mapped_column(String(36), index=True) 
+    
+    # 2. 基本消費資訊
+    title: Mapped[str] = mapped_column(String(100))      # 項目 (例如：第一天晚餐、包車費)
+    amount: Mapped[float] = mapped_column(Float)         # 總金額 (例如：1500)
+    
+    # 3. 分帳核心邏輯
+    payer: Mapped[str] = mapped_column(String(100), nullable=False)       # 「誰先代墊的？」 (例如："A")
+    
+    # 「這筆錢有誰要一起分？」(存入 JSON 陣列，例如 ["A", "B", "C"])
+    split_members: Mapped[list | None] = mapped_column(JSON) 
+    
+    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
