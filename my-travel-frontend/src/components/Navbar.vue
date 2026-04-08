@@ -157,7 +157,7 @@ const handleFilterClick = (type, value) => {
   if (type === 'category') emit('selectCategory', value)
   if (type === 'accommodation') emit('filterAccommodation', value)
   
-  emit('changePage', 'home') // 切回首頁看結果
+  //emit('changePage', 'home') // 切回首頁看結果
   isSidebarOpen.value = false // 關閉側邊欄
 }
 </script>

@@ -14,6 +14,12 @@ const currentCategory = ref('全部')
 
 // --- 導航邏輯 ---
 const switchPage = (pageName) => {
+  if (pageName === 'home') {
+    currentCategory.value = '全部' // 1. 把分類重置為全部
+    router.push({ path: '/' })     // 2. 用 path: '/' 強制清掉所有網址參數 (不要用 name)
+    return
+  }
+  
   const routeMap = {
     'home': 'home',
     'add': 'add',
@@ -31,6 +37,24 @@ const switchPage = (pageName) => {
 const handleSelectCategory = (categoryName) => {
   currentCategory.value = categoryName
   switchPage('home') // 切換分類時，確保跳回首頁看結果
+}
+
+const handleFilterLocation = (locationValue) => {
+  console.log("收到地點了！準備切換到：", locationValue)
+  // 把目前的網址參數複製一份
+  const currentQuery = { ...route.query }
+
+  if (locationValue === '') {
+    // 如果點「全部地點」，就把 location 參數刪掉
+    delete currentQuery.location
+  } else {
+    // 否則就把點擊的洲際 (例如 'Europe') 放進參數裡
+    currentQuery.location = locationValue
+  }
+
+  // 透過 Vue Router 推送新網址
+  // 加上 path: '/' 確保如果使用者在其他頁面點擊側邊欄，會被強制帶回首頁看結果
+  router.push({ path: '/', query: currentQuery })
 }
 
 // --- 登入成功處理 ---
@@ -80,6 +104,8 @@ onMounted(() => {
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
+
+
 </script>
 
 <template>

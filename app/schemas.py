@@ -53,6 +53,7 @@ class SpotCreate(SpotBase):
 class SpotOut(SpotBase):
     id: str
     created_at: datetime
+    region: Optional[str] = None
 
     class Config:
         from_attributes = True
