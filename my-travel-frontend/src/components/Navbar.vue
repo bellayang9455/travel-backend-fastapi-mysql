@@ -95,9 +95,12 @@ const accommodations = [
 
 // 檢查登入狀態
 const checkLoginStatus = () => {
-  const token = localStorage.getItem('token')
-  const name = localStorage.getItem('userName')
+  /*const token = localStorage.getItem('token')
+  const name = localStorage.getItem('userName')*/
   
+  const token = sessionStorage.getItem('token')
+  const storeUser = sessionStorage.getItem('user')
+
   if (token && name) {
     isLoggedIn.value = true
     userName.value = name
@@ -111,10 +114,13 @@ const checkLoginStatus = () => {
 const handleLogout = () => {
   if (confirm('確定要登出嗎？')) {
     // 1. 清除 localStorage
-    localStorage.removeItem('token')
+    /*localStorage.removeItem('token')
     localStorage.removeItem('user_id')
-    localStorage.removeItem('user_name')
+    localStorage.removeItem('user_name')*/
     
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('user_id')
+    sessionStorage.removeItem('user_name')
     // 2. 跳轉回登入頁或首頁
     emit('logout')
     

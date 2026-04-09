@@ -61,7 +61,8 @@ const handleFilterLocation = (locationValue) => {
 const handleLoginSuccess = (userData) => {
   if (userData) {
     user.value = userData
-    localStorage.setItem('user', JSON.stringify(userData))
+    sessionStorage.setItem('user', JSON.stringify(userData))
+    //localStorage.setItem('user', JSON.stringify(userData))
   }
   router.push({ name: 'home' })
 }
@@ -69,10 +70,14 @@ const handleLoginSuccess = (userData) => {
 // --- 登出處理 ---
 const handleLogout = () => {
   user.value = null
-  localStorage.removeItem('user')
+  /*localStorage.removeItem('user')
   localStorage.removeItem('token')
   localStorage.removeItem('user_name')
-  localStorage.removeItem('user_id')
+  localStorage.removeItem('user_id')*/
+  sessionStorage.removeItem('user')
+  sessionStorage.removeItem('token')
+  sessionStorage.removeItem('user_name')
+  sessionStorage.removeItem('user_id')
   alert('已登出')
   router.push({ name: 'login' })
 }
@@ -88,9 +93,11 @@ onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') isDarkMode.value = true
   
-  const token = localStorage.getItem('token')
-  const storeUser = localStorage.getItem('user')
+  /*const token = localStorage.getItem('token')
+  const storeUser = localStorage.getItem('user')*/
   
+  const token = sessionStorage.getItem('token')
+  const storeUser = sessionStorage.getItem('user')
   if (token && storeUser) {
     try {
       user.value = JSON.parse(storeUser)

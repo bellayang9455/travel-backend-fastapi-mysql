@@ -15,7 +15,8 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 從 localStorage 拿出 token
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
+    /*const token = localStorage.getItem('token');*/
     // 如果有 token，就把它加到 Header 裡
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
