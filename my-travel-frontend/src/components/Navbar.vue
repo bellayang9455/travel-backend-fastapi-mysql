@@ -83,8 +83,6 @@ const categories = [
 ]
 
 // 方法
-
-
 // 登出功能
 const handleLogout = () => {
   if (confirm('確定要登出嗎？')) {
@@ -132,7 +130,7 @@ const handleMenuClick = (pageName) => {
   isSidebarOpen.value = false
 } 
 
-// 篩選功能 (地點、分類、住宿類型)
+// 篩選功能 (洲際、景點分類類型)
 const handleFilterClick = (type, value) => {
   if (type === 'location') emit('filterLocation', value)
   if (type === 'category') emit('selectCategory', value)
