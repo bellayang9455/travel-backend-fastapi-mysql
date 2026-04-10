@@ -18,8 +18,7 @@ const props = defineProps({
 const emit = defineEmits([
   'changePage', 
   'filterLocation', 
-  'filterCategory', 
-  'filterAccommodation', 
+  'filterCategory',  
   'toggleTheme',
   'selectCategory',
   'logout'
@@ -83,32 +82,8 @@ const categories = [
   { name: '✨ 其他', value: '其他' }
 ]
 
-const accommodations = [
-  { name: '🏨 飯店', value: '飯店' },
-  { name: '🏩 民宿', value: '民宿' },
-  { name: '🏕️ 露營', value: '露營' },
-  { name: '🛏️ 青年旅館', value: '青年旅館' },
-  { name: '🏠 公寓式住宿', value: '公寓式住宿' }
-]
-
 // 方法
 
-// 檢查登入狀態
-const checkLoginStatus = () => {
-  /*const token = localStorage.getItem('token')
-  const name = localStorage.getItem('userName')*/
-  
-  const token = sessionStorage.getItem('token')
-  const storeUser = sessionStorage.getItem('user')
-
-  if (token && name) {
-    isLoggedIn.value = true
-    userName.value = name
-  } else {
-    isLoggedIn.value = false
-    userName.value = ''
-  }
-}
 
 // 登出功能
 const handleLogout = () => {
@@ -161,7 +136,6 @@ const handleMenuClick = (pageName) => {
 const handleFilterClick = (type, value) => {
   if (type === 'location') emit('filterLocation', value)
   if (type === 'category') emit('selectCategory', value)
-  if (type === 'accommodation') emit('filterAccommodation', value)
   
   //emit('changePage', 'home') // 切回首頁看結果
   isSidebarOpen.value = false // 關閉側邊欄
@@ -259,17 +233,6 @@ const handleFilterClick = (type, value) => {
             </a>
           </div>
         </details>
-
-        <details class="nav-details">
-          <summary class="nav-item">🛏️ 住宿類型</summary>
-          <div class="details-content">
-             <a @click="handleFilterClick('accommodation', '')">全部住宿</a>
-             <a v-for="acc in accommodations" :key="acc.value" @click="handleFilterClick('accommodation', acc.value)">
-               {{ acc.name }}
-             </a>
-          </div>
-        </details>
-
       </nav>
     </aside>
   </div>
