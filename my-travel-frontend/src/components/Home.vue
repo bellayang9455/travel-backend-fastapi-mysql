@@ -59,13 +59,18 @@ const sortedSpots = computed(() => {
       return spot.region === route.query.location
     })
   }
-
-  if (sortBy.value === 'newest') {
-    // 假設 id 越大越新，反轉陣列
-    return list.reverse() 
+ 
+// 依時間排序
+ if (sortBy.value === 'newest') {
+    // 最新建立：時間越晚的排越前面 (b - a)
+    return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    
   } else if (sortBy.value === 'oldest') {
-    return list 
+    // 最舊建立：時間越早的排越前面 (a - b)
+    return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    
   } else if (sortBy.value === 'name_asc') {
+    // 名稱排序保持不變
     return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')) 
   }
   return list
@@ -193,7 +198,6 @@ const clearSearch = () => {
 
 <template>
   <div class="spot-container">
-    
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
@@ -240,7 +244,7 @@ const clearSearch = () => {
           </div>
 
           <div class="tags-row">
-            <template v-if="spot.features && spot.features.features">
+            <template v-if="spot.features?.features?.length > 0 && spot.features.features[0] !== ''">
               <span v-for="(tag, index) in spot.features.features.slice(0, 3)" :key="index" class="feature-tag">
                 #{{ tag }}
               </span>
@@ -250,14 +254,14 @@ const clearSearch = () => {
           <div class="footer">
              <div class="rec-text">
                  <span class="label">推薦：</span>
-                 <span v-if="spot.activities && spot.activities.activities">
+                 <span v-if="spot.activities?.activities?.length > 0 && spot.activities.activities[0] !== ''">
                    {{ spot.activities.activities.slice(0, 2).join('、') }}
                  </span>
                  <span v-else>自由探索</span>
              </div>
              
              <button @click="openAddModal(spot.id)" class="btn-add-itin" title="加入行程">
-                📅
+               📅
              </button>
           </div>
         </div>

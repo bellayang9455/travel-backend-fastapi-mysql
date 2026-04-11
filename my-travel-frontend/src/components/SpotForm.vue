@@ -9,6 +9,7 @@ const emit = defineEmits(['submitSuccess'])
 const formData = ref({
   name: '',
   category: '',
+  region:'',
   location: '',
   hours: '',
   featuresStr: '',
@@ -98,6 +99,7 @@ const submitData = async () => {
     const payload = {
       name: formData.value.name,
       category: formData.value.category,
+      region: formData.value.region,
       location: formData.value.location,
       hours: formData.value.hours,
       features: featuresJson,    // 直接送 ['老街', '夜景']
@@ -110,7 +112,7 @@ const submitData = async () => {
     
     // 清空表單
     formData.value = {
-      name: '', category: '', location: '', hours: '', featuresStr: '', activitiesStr: ''
+      name: '', category: '', region: '', location: '', hours: '', featuresStr: '', activitiesStr: ''
     }
     
     emit('submitSuccess') // 通知父元件新增成功
@@ -153,20 +155,12 @@ const submitData = async () => {
           <option disabled value="">請選擇分類</option>
           
           <optgroup label="景點類型">
-            <option>🏞️ 自然生態</option>
-            <option>🏯 歷史人文</option>
-            <option>🍜 在地美食</option>
-            <option>🎡 休閒娛樂</option>
-            <option>🛍️ 購物商圈</option>
-            <option>📸 網美打卡</option>
-          </optgroup>
-
-          <optgroup label="住宿類型">
-            <option value="飯店">🏨 飯店</option>
-            <option value="民宿">🏩 民宿</option>
-            <option value="露營">🏕️ 露營</option>
-            <option value="青旅">🛏️ 青年旅館</option>
-            <option value="公寓式住宿">🏠 公寓式住宿</option>
+            <option>自然生態</option>
+            <option>歷史人文</option>
+            <option>在地美食</option>
+            <option>休閒娛樂</option>
+            <option>購物商圈</option>
+            <option>網美打卡</option>
           </optgroup>
 
           <option value="其他">✨ 其他</option>
@@ -174,7 +168,20 @@ const submitData = async () => {
       </div>
 
       <div class="input-group half">
-        <label>地點 <span class="required">*</span></label>
+        <label>🌍 所屬洲際 <span class="required">*</span></label>
+        <select v-model="formData.region" required>
+          <option disabled value="">請選擇所屬洲際</option>
+          <option value="Asia">亞洲(不含台灣)</option>
+          <option value="Europe">歐洲</option>
+          <option value="Americas">美洲</option>
+          <option value="Oceania">大洋洲</option>
+          <option value="Africa">非洲</option>
+          <option value="Taiwan">台灣</option>
+        </select>
+      </div>
+
+      <div class="input-group half">
+        <label>📍 詳細地點 <span class="required">*</span></label>
         <input 
           v-model="formData.location" 
           placeholder="例如：新北" 

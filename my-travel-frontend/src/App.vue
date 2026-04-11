@@ -111,8 +111,6 @@ onMounted(() => {
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
-
-
 </script>
 
 <template>
