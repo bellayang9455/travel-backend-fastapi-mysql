@@ -3,6 +3,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter,useRoute } from 'vue-router';
 import api from '../api/axios.js'
+import SpotForm from './SpotForm.vue'
 
 // 接收 App.vue 傳來的 user
 const props = defineProps({
@@ -24,6 +25,10 @@ const selectedCategory = ref(props.initialCategory || '全部')//景點分類預
 const showAddModal = ref(false)
 const selectedSpotId = ref(null)
 const selectedItineraryId = ref('')
+
+// 編輯功能
+const showEditModal = ref(false)
+const currentEditSpot = ref(null)
 
 // 產生隨機圖片網址
 const getImageUrl = (id) => {
@@ -194,6 +199,20 @@ watch(() => props.user, (newUser) => {
 const clearSearch = () => {
     router.push({ name: 'home' }) // 這會清空網址參數，觸發上面的 watch
 }
+
+// 開啟編輯視窗
+const openEditModal = (spot) => {
+  console.log("✏️ 準備編輯這筆資料：", spot)
+  currentEditSpot.value = spot
+  showEditModal.value = true
+}
+
+// 編輯成功後的處理
+const handleEditSuccess = () => {
+  showEditModal.value = false
+  currentEditSpot.value = null
+  fetchSpots() // 重新拉取最新的景點列表來更新畫面！
+}
 </script>
 
 <template>
@@ -260,7 +279,11 @@ const clearSearch = () => {
                  <span v-else>自由探索</span>
              </div>
              
-             <button @click="openAddModal(spot.id)" class="btn-add-itin" title="加入行程">
+             <button @click.stop="openEditModal(spot)" class="btn-add-itin" style="background-color: #f39c12; margin-right: 5px;" title="編輯景點">
+               ✏️
+             </button>
+             
+             <button @click.stop="openAddModal(spot.id)" class="btn-add-itin" title="加入行程">
                📅
              </button>
           </div>
@@ -286,6 +309,15 @@ const clearSearch = () => {
       </div>
     </div>
 
+    <div v-if="showEditModal" class="modal-overlay" style="z-index: 9999;">
+      <div style="width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+         <SpotForm 
+           :spotToEdit="currentEditSpot" 
+           @submitSuccess="handleEditSuccess" 
+           @cancel="showEditModal = false" 
+         />
+      </div>
+    </div>
   </div>
 </template>
 

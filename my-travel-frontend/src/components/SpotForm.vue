@@ -4,17 +4,36 @@
 import { ref, watch } from 'vue'
 import api from '../api/axios.js'
 
-const emit = defineEmits(['submitSuccess'])
-
-const formData = ref({
-  name: '',
-  category: '',
-  region:'',
-  location: '',
-  hours: '',
-  featuresStr: '',
-  activitiesStr: ''
+const props = defineProps({
+  spotToEdit: {
+    type: Object,
+    default: null
+  }
 })
+
+const emit = defineEmits(['submitSuccess', 'cancel'])
+const formData = ref({
+  name: '', category: '', region: '', location: '', hours: '', featuresStr: '', activitiesStr: ''
+})
+
+//  自動填寫魔法：只要發現有舊資料，就自動填入 formData
+watch(() => props.spotToEdit, (newVal) => {
+  if (newVal) {
+    formData.value = {
+      name: newVal.name || '',
+      category: newVal.category || '',
+      region: newVal.region || '',
+      location: newVal.location || '',
+      hours: newVal.hours || '',
+      // 把陣列變回字串顯示在輸入框
+      featuresStr: newVal.features?.features?.join(', ') || '',
+      activitiesStr: newVal.activities?.activities?.join(', ') || ''
+    }
+  } else {
+    // 如果沒有傳入舊資料，就清空表單 (代表是新增模式)
+    formData.value = { name: '', category: '', region: '', location: '', hours: '', featuresStr: '', activitiesStr: '' }
+  }
+}, { immediate: true })
 
 const nameError = ref('')     // 存放錯誤訊息
 const isChecking = ref(false) // 是否正在檢查中
@@ -102,20 +121,24 @@ const submitData = async () => {
       region: formData.value.region,
       location: formData.value.location,
       hours: formData.value.hours,
-      features: featuresJson,    // 直接送 ['老街', '夜景']
-      activities: activitiesJson // 直接送 ['拍照', '逛街']
+      features: featuresJson,
+      activities: activitiesJson
     }
 
-    await api.post('/api/spots', payload)
-    
-    alert('🎉 新增成功！')
-    
-    // 清空表單
-    formData.value = {
-      name: '', category: '', region: '', location: '', hours: '', featuresStr: '', activitiesStr: ''
+    // 判斷是新增還是編輯
+    if (props.spotToEdit) {
+      // 編輯模式：打 PUT API (記得帶上 id)
+      await api.put(`/api/spots/${props.spotToEdit.id}`, payload)
+      alert('✏️ 更新成功！')
+    } else {
+      // 新增模式：打 POST API
+      await api.post('/api/spots', payload)
+      alert('🎉 新增成功！')
     }
     
-    emit('submitSuccess') // 通知父元件新增成功
+    // 清空並通知老爸
+    formData.value = { name: '', category: '', region: '', location: '', hours: '', featuresStr: '', activitiesStr: '' }
+    emit('submitSuccess')// 通知父元件新增成功
   } catch (error) {
     if (error.response && error.response.status === 400) {
         // 這會顯示後端回傳的 "這個景點已經存在囉！"
@@ -132,8 +155,8 @@ const submitData = async () => {
   <div class="form-container">
     <div class="form-box">
       <div class="form-header">
-        <h3>➕ 新增私房景點</h3>
-        <p>分享你發現的美好角落</p>
+        <h3>{{ spotToEdit ? '✏️ 編輯景點' : '➕ 新增私房景點' }}</h3>
+        <p>{{ spotToEdit ? '協助更新最新的景點資訊' : '分享你發現的美好角落' }}</p>
       </div>
       
       <div class="input-group">
@@ -204,7 +227,13 @@ const submitData = async () => {
         <input v-model="formData.activitiesStr" placeholder="例如：茶館, 拍照, 健行" />
       </div>
 
-      <button @click="submitData" class="submit-btn">送出資料</button>
+      <button @click="submitData" class="submit-btn">
+        {{ spotToEdit ? '儲存更新' : '送出資料' }}
+      </button>
+      
+      <button v-if="spotToEdit" @click="emit('cancel')" class="submit-btn" style="background-color: #999; margin-top: 10px;">
+        取消編輯
+      </button>
     </div>
   </div>
 </template>

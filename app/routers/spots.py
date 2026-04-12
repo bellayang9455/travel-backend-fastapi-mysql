@@ -152,3 +152,35 @@ def fix_old_spots_regions(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         return {"error": str(e)}
+    
+@router.put("/{spot_id}",response_model=schemas.SpotOut)
+async def update_spot(spot_id: str, spot_data: schemas.SpotCreate, db: Session = Depends(get_db)):
+    spot = db.query(models.Spot).filter(models.Spot.id == spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="找不到該景點")
+    
+    # 2. (選用) 檢查改名後是否跟別人重複 (排除自己目前的 id)
+    existing_spot = db.query(models.Spot).filter(models.Spot.name == spot_data.name, models.Spot.id != spot_id).first()
+    if existing_spot:
+        raise HTTPException(status_code=400, detail="這個景點名稱已經存在囉！")
+
+    # 3. 覆寫欄位資料
+    spot.name = spot_data.name
+    spot.category = spot_data.category
+    spot.location = spot_data.location
+    spot.hours = spot_data.hours
+    spot.features = spot_data.features
+    spot.activities = spot_data.activities
+    
+    # 將前端傳來的洲際也更新進去 (使用 getattr 防止前端沒傳時出錯)
+    spot.region = getattr(spot_data, 'region', spot.region)
+    
+    # 4. 存檔並回傳
+    try:
+        db.commit()
+        db.refresh(spot)
+        return spot # 回傳更新後的景點資料
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Database Error: {e}") 
+        raise HTTPException(status_code=500, detail=f"更新景點失敗: {str(e)}")
