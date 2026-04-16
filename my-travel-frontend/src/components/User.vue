@@ -152,10 +152,6 @@ const deleteSpotFromItinerary = async (itemId) => {
     }
 };
 
-// 選擇行程
-const selectItinerary = (itin) => {
-    activeItinerary.value = itin;
-};
 
 // 拖曳結束後，更新排序到後端
 const onDragEnd = async () => {
@@ -255,6 +251,22 @@ const copyCode = (code) => {
     alert('複製失敗，請手動複製')
   })
 }
+
+// 在其他狀態變數附近新增
+const isModalOpen = ref(false);
+
+// 修改選擇行程的方法
+const selectItinerary = (itin) => {
+    activeItinerary.value = itin;
+    isModalOpen.value = true; // 點擊時開啟彈窗
+};
+
+// 關閉彈窗的方法
+const closeModal = () => {
+    isModalOpen.value = false;
+    // 不一定要清空 activeItinerary，看你是否希望背景保持選中狀態
+};
+
 </script>
 
 <template>
@@ -360,39 +372,44 @@ const copyCode = (code) => {
 
             <hr class="divider">
 
-            <div v-if="activeItinerary" class="itin-detail">
-                <h3>
-                    📍 {{ activeItinerary.title }} - 景點規劃
-                    <small style="font-size:0.9rem; color:var(--text-secondary)"> (預算: ${{ activeItinerary.budget }})</small>
-                </h3>
-                
-                <draggable 
-                    v-model="activeItinerary.spots" 
-                    item-key="id" 
-                    @end="onDragEnd"
-                    class="drag-area"
-                >
-                    <template #item="{ element }">
-                        <div class="spot-item">
-                            <div class="drag-handle">☰</div>
-                            <img :src="getImageUrl(element.spot.id)" class="spot-thumb">
-                            <div class="spot-content">
+            <Transition name="fade">
+                <div v-if="isModalOpen && activeItinerary" class="modal-overlay" @click.self="closeModal">
+                    <div class="modal-window">
+                    <div class="modal-header">
+                        <h2>📍 {{ activeItinerary.title }} - 景點規劃</h2>
+                        <button class="close-x" @click="closeModal">✕</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="budget-tag">預算: ${{ activeItinerary.budget }}</p>
+                        
+                        <draggable 
+                        v-model="activeItinerary.spots" 
+                        item-key="id" 
+                        handle=".drag-handle"
+                        @end="onDragEnd"
+                        class="drag-list"
+                        >
+                        <template #item="{ element }">
+                            <div class="modal-spot-item">
+                            <span class="drag-handle">☰</span>
+                            <img :src="getImageUrl(element.spot.id)" class="mini-img" />
+                            <div class="info">
                                 <strong>{{ element.spot.name }}</strong>
-                                <p>{{ element.spot.location }} | {{ element.spot.category }}</p>
+                                <span>{{ element.spot.location }}</span>
                             </div>
-                            <button @click="deleteSpotFromItinerary(element.id)" class="btn-remove-spot">✕</button>
-                        </div>
-                    </template>
-                </draggable>
+                            <button @click="deleteSpotFromItinerary(element.id)" class="remove-btn">✕</button>
+                            </div>
+                        </template>
+                        </draggable>
+                    </div>
 
-                <div v-if="(!activeItinerary.spots || activeItinerary.spots.length === 0)" class="empty-spots">
-                    此行程還沒有景點，請去首頁加入！
+                    <div class="modal-footer">
+                        <button class="btn-complete" @click="closeModal">完成編輯</button>
+                    </div>
+                    </div>
                 </div>
-            </div>
-            <div v-else class="no-selection">
-                請點選上方行程以查看詳情
-            </div>
-
+                </Transition>
         </div>
     </div>
   </div>
@@ -516,5 +533,89 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     padding: 2px 8px;
     border-radius: 10px;
     border: 1px solid #bbdefb;
+}
+
+/* 旅遊詳細規劃彈出視窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7); /* 半透明黑 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* 確保在最上層 */
+}
+
+/* 視窗主體 */
+.modal-window {
+  background: white;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.modal-header {
+  padding: 20px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto; /* 景點多時可以滾動 */
+}
+
+.modal-footer {
+  padding: 15px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.btn-complete {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* 動畫效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* 內部景點樣式調整 */
+.modal-spot-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border: 1px solid #eee;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.mini-img {
+  width: 50px;
+  height: 50px;
+  object-cover: cover;
+  border-radius: 5px;
 }
 </style>
