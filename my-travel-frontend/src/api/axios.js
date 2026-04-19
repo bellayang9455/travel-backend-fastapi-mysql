@@ -37,13 +37,15 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       console.log('Token 過期，強制登出');
       
-      // 清除髒掉的 Token
-      localStorage.removeItem('token');
-      localStorage.removeItem('user_name');
-      localStorage.removeItem('user_id');
+      // ✅ 改成全面清除 sessionStorage
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user_name');
+      sessionStorage.removeItem('user_id');
+      
+      // 💡 或者是更霸氣的寫法：直接清空當前分頁的所有 session 資料
+      // sessionStorage.clear(); 
 
-      // 強制重新整理頁面 (讓 Navbar 變回未登入狀態)
-      // 如果你有用 router，也可以寫 router.push('/login')
+      // 強制重新整理頁面
       window.location.href = '/login'; 
     }
     return Promise.reject(error);

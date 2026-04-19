@@ -93,17 +93,21 @@ onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') isDarkMode.value = true
   
-  /*const token = localStorage.getItem('token')
-  const storeUser = localStorage.getItem('user')*/
-  
   const token = sessionStorage.getItem('token')
   const storeUser = sessionStorage.getItem('user')
+
   if (token && storeUser) {
-    try {
+      // 如果有 token，就把 user 物件補回來
+      try {
+      // 成功解析 JSON 並塞回 user 變數
       user.value = JSON.parse(storeUser)
+      console.log("✅ 偵測到 Session，已自動恢復登入狀態")
     } catch (e) {
       console.error("User parse error", e)
+      user.value = null
     }
+  } else {
+    console.log("❌ 無 Session 資料，保持登出狀態")
   }
 })
 

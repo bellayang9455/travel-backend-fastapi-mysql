@@ -46,12 +46,12 @@ const handleLogin = async () => {
     }
 
     // 儲存到 localStorage
-    localStorage.setItem('token', access_token)
-    localStorage.setItem('user', JSON.stringify(userData))
+    sessionStorage.setItem('token', access_token)
+    sessionStorage.setItem('user', JSON.stringify(userData))
 
     // 清除舊的單獨存的資料（如果有的話）
-    localStorage.removeItem('userId') 
-    localStorage.removeItem('userName')
+    sessionStorage.removeItem('userId') 
+    sessionStorage.removeItem('userName')
 
 
     alert(`🎉 歡迎回來，${user_name}！`)
