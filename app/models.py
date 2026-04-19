@@ -127,19 +127,21 @@ class TravelRecord(Base):
 class Expense(Base):
     __tablename__ = "expenses"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    id = Column(String(50), primary_key=True, index=True)
     
-    # 1. 綁定行程：這筆帳是屬於哪一個行程的？
-    itinerary_id: Mapped[str] = mapped_column(String(36), index=True) 
+    # 關聯
+    itinerary_id = Column(String(50), ForeignKey("itineraries.id"), nullable=False)
+    payer_id = Column(String(50), ForeignKey("users.id"), nullable=False)
     
-    # 2. 基本消費資訊
-    title: Mapped[str] = mapped_column(String(100))      # 項目 (例如：第一天晚餐、包車費)
-    amount: Mapped[float] = mapped_column(Float)         # 總金額 (例如：1500)
+    # 基本花費資訊
+    description = Column(String(255), nullable=False) 
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="TWD")
     
-    # 3. 分帳核心邏輯
-    payer: Mapped[str] = mapped_column(String(100), nullable=False)       # 「誰先代墊的？」 (例如："A")
-    
-    # 「這筆錢有誰要一起分？」(存入 JSON 陣列，例如 ["A", "B", "C"])
-    split_members: Mapped[list | None] = mapped_column(JSON) 
-    
-    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # 核心分帳資料
+    split_details = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    itinerary = relationship("Itinerary", backref="expenses")
+    payer = relationship("User", foreign_keys=[payer_id])

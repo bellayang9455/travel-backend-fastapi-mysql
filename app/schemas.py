@@ -138,3 +138,28 @@ class TravelRecordOut(TravelRecordBase):
 
     class Config:
         from_attributes = True
+
+
+# -- AccountingRecord --
+class SplitDetail(BaseModel):
+    user_id: str
+    amount: float
+
+# 花費 (Expense) 的基礎模型
+class ExpenseBase(BaseModel):
+    itinerary_id: str       # 屬於哪個行程
+    payer_id: str           # 誰付的錢
+    description: str        # 買了什麼 (例如: 高鐵票)
+    amount: float           # 總金額
+    currency: Optional[str] = "TWD"
+    split_details: List[SplitDetail]  # 規定須傳入 List 格式
+
+class ExpenseCreate(ExpenseBase):
+    pass
+
+class ExpenseOut(ExpenseBase):
+    id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

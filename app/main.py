@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import Base, engine, SessionLocal
 from .seed_data import seed
-from .routers import health, spots, itineraries, reviews, travel_records, users, auth, ai_plan, collab
+from .routers import health, spots, itineraries, reviews, travel_records, users, auth, ai_plan, collab, expenses
 
 # 建表
 Base.metadata.create_all(bind=engine)
@@ -37,3 +37,4 @@ app.include_router(users.router, prefix="/api/users")
 app.include_router(auth.router,prefix="/auth")
 app.include_router(ai_plan.router, prefix="/api", tags=["AI Planner"])
 app.include_router(collab.router, prefix="/api/collab", tags=["Collaboration"])
+app.include_router(expenses.router)
