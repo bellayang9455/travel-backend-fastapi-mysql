@@ -64,7 +64,6 @@ class ItineraryBase(BaseModel):
     title: str
     budget: Optional[int] = None
     travel_time: Optional[str] = None
-    lodging: Optional[str] = None
     transport: Optional[str] = None
 
 class ItineraryCreate(ItineraryBase):
@@ -73,6 +72,7 @@ class ItineraryCreate(ItineraryBase):
 
 class ItineraryItemUpdate(BaseModel):
     item_id: int
+    new_day_order: int
     new_order: int
 
 class ItinerarySpotOut(BaseModel):

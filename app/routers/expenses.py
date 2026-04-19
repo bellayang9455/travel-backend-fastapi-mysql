@@ -4,9 +4,10 @@ from ..database import get_db
 from .. import models, schemas
 import uuid
 from datetime import datetime, timezone, timedelta
+from typing import List
 
 # 建立專屬的 router，網址前綴設為 /api/expenses
-router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
+router = APIRouter(prefix="/api/expenses", tags=["expenses"])
 
 @router.post("/", response_model=schemas.ExpenseOut, status_code=201)
 def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
@@ -48,3 +49,13 @@ def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)
         db.rollback()
         print(f"❌ Database Error: {e}") 
         raise HTTPException(status_code=500, detail=f"新增花費失敗: {str(e)}")
+    
+@router.get("/itinerary/{itinerary_id}", response_model=List[schemas.ExpenseOut])
+def get_itinerary_expenses(itinerary_id: str, db: Session = Depends(get_db)):
+    # 到資料庫找出所有符合行程 ID 的花費
+    # 並依照時間排序 (最新的在前面)
+    expenses = db.query(models.Expense).filter(
+        models.Expense.itinerary_id == itinerary_id
+    ).order_by(models.Expense.created_at.desc()).all()
+    
+    return expenses

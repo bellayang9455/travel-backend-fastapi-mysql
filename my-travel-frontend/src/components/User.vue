@@ -6,7 +6,8 @@
 import { ref, reactive, watch, computed } from 'vue';
 import api from '../api/axios.js'; // 用封裝好的 api
 import draggable from 'vuedraggable';
-import rawCountries from '../assets/countries_number.json'; 
+import rawCountries from '../assets/countries_number.json';
+import ExpenseSection from '../components/ExpenseSection.vue'; 
 
 // 資料預處理
 const countryCodes = rawCountries.map(item => {
@@ -51,8 +52,27 @@ const newItineraryForm = reactive({
     title: '',
     budget: 0,
     travel_time: '',
-    lodging: '',
     transport: ''
+});
+
+const isEditingItin = ref(false);
+const editItinForm = reactive({
+    title: '',
+    budget: 0,
+    travel_time: '',
+    transport: ''
+});
+
+const allMembers = computed(() => {
+    if (!activeItinerary.value) return [];
+    const members = [];
+    if (activeItinerary.value.owner) {
+        members.push(activeItinerary.value.owner);
+    }
+    if (activeItinerary.value.collaborators) {
+        members.push(...activeItinerary.value.collaborators);
+    }
+    return members;
 });
 
 // 方法：使用者資料
@@ -157,19 +177,29 @@ const selectItinerary = (itin) => {
     activeItinerary.value = itin;
 };
 
-// 拖曳結束後，更新排序到後端
+//  強化拖曳排序邏輯 (支援跨天數)
 const onDragEnd = async () => {
     if (!activeItinerary.value) return;
     
-    // 準備 payload：只傳送 item_id 和 new_order
-    const payload = activeItinerary.value.spots.map((item, index) => ({
-        item_id: item.id,   // 這是關聯表 (itinerary_spots) 的 ID
-        new_order: index    // 新的順序
-    }));
+    // 這裡是最核心的邏輯：
+    // 我們要遍歷 groupedSpotsByDay，根據它在哪個分組，重新賦予 day_order
+    const payload = [];
+    groupedSpotsByDay.value.forEach(group => {
+        group.items.forEach((item, index) => {
+            payload.push({
+                item_id: item.id,
+                new_day_order: group.day, // 更新天數
+                new_order: index          // 更新在該天內的順序
+            });
+        });
+    });
+
+    if (payload.length === 0) return;
 
     try {
+        // 注意：這裡我們需要後端配合更新 day_order
         await api.post(`/api/itineraries/${activeItinerary.value.id}/reorder`, payload);
-        console.log("排序更新成功");
+        console.log("跨天排序更新成功");
     } catch (e) {
         console.error("排序更新失敗", e);
     }
@@ -255,6 +285,69 @@ const copyCode = (code) => {
     alert('複製失敗，請手動複製')
   })
 }
+
+// 預設顯示行程頁籤
+const activeTab = ref('route');
+
+const groupedSpotsByDay = ref([]);
+// 將行程中的景點依照 day_order 分組，並轉換為適合 vuedraggable 的格式
+const syncGroups = () => {
+    if (!activeItinerary.value) {
+        groupedSpotsByDay.value = [];
+        return;
+    }
+    
+    const groups = {};
+    // 根據旅遊天數 (travel_time) 初始化桶子
+    const totalDays = parseInt(activeItinerary.value.travel_time) || 1;
+    for (let i = 1; i <= totalDays; i++) {
+        groups[i] = [];
+    }
+    
+    // 把景點塞進去
+    if (activeItinerary.value.spots) {
+        activeItinerary.value.spots.forEach(item => {
+            const day = item.day_order || 1;
+            if (!groups[day]) groups[day] = [];
+            groups[day].push(item);
+        });
+    }
+    
+    // 轉成陣列存入 ref
+    groupedSpotsByDay.value = Object.keys(groups).map(day => ({
+        day: parseInt(day),
+        items: groups[day]
+    }));
+};
+watch(() => activeItinerary.value, () => {
+    syncGroups();
+}, { deep: true });
+
+// 開始編輯行程基本資料
+const startEditItin = () => {
+    if (!activeItinerary.value) return;
+    Object.assign(editItinForm, {
+        title: activeItinerary.value.title,
+        budget: activeItinerary.value.budget,
+        travel_time: activeItinerary.value.travel_time,
+        transport: activeItinerary.value.transport
+    });
+    isEditingItin.value = true;
+};
+
+// 儲存行程基本資料
+const saveItineraryInfo = async () => {
+    try {
+        const response = await api.put(`/api/itineraries/${activeItinerary.value.id}`, editItinForm);
+        activeItinerary.value = { ...activeItinerary.value, ...response.data };
+        isEditingItin.value = false;
+        alert("行程資訊更新成功！");
+        await fetchItineraries(); // 重新刷左側列表
+    } catch (e) {
+        alert("更新失敗：" + (e.response?.data?.detail || e.message));
+    }
+};
+
 </script>
 
 <template>
@@ -323,7 +416,7 @@ const copyCode = (code) => {
                     <div><label>行程名稱 *</label><input v-model="newItineraryForm.title" placeholder="例如：東京五日遊" /></div>
                     <div><label>預算 (TWD)</label><input type="number" v-model="newItineraryForm.budget" /></div>
                     <div><label>預計時間</label><input v-model="newItineraryForm.travel_time" placeholder="例如：2023/12/25" /></div>
-                    <div><label>住宿安排</label><input v-model="newItineraryForm.lodging" /></div>
+                    <div><label>預計天數</label><input v-model="newItineraryForm.lodging" placeholder="1" type="number" min="1" /></div>
                     <div><label>交通方式</label><input v-model="newItineraryForm.transport" /></div>
                 </div>
                 <button @click="createItinerary" class="btn-submit-itin">建立行程</button>
@@ -361,32 +454,76 @@ const copyCode = (code) => {
             <hr class="divider">
 
             <div v-if="activeItinerary" class="itin-detail">
-                <h3>
-                    📍 {{ activeItinerary.title }} - 景點規劃
-                    <small style="font-size:0.9rem; color:var(--text-secondary)"> (預算: ${{ activeItinerary.budget }})</small>
-                </h3>
-                
-                <draggable 
-                    v-model="activeItinerary.spots" 
-                    item-key="id" 
-                    @end="onDragEnd"
-                    class="drag-area"
-                >
-                    <template #item="{ element }">
-                        <div class="spot-item">
-                            <div class="drag-handle">☰</div>
-                            <img :src="getImageUrl(element.spot.id)" class="spot-thumb">
-                            <div class="spot-content">
-                                <strong>{{ element.spot.name }}</strong>
-                                <p>{{ element.spot.location }} | {{ element.spot.category }}</p>
-                            </div>
-                            <button @click="deleteSpotFromItinerary(element.id)" class="btn-remove-spot">✕</button>
-                        </div>
-                    </template>
-                </draggable>
+                <div class="itin-detail-header">
+                    <div v-if="!isEditingItin">
+                        <h3>
+                            📍 {{ activeItinerary.title }}
+                            <button @click="startEditItin" class="btn-edit-small">✏️ 編輯資訊</button>
+                        </h3>
+                        <p class="itin-meta-info">
+                            💰 預算: ${{ activeItinerary.budget }}
+                        </p>
+                        <p class="itin-meta-info">
+                            ⏳ 旅遊天數: {{ activeItinerary.travel_time }} 天 | 🚗 交通: {{ activeItinerary.transport }}
+                        </p>
+                    </div>
 
-                <div v-if="(!activeItinerary.spots || activeItinerary.spots.length === 0)" class="empty-spots">
-                    此行程還沒有景點，請去首頁加入！
+                    <div v-else class="edit-itin-info-form">
+                        <input v-model="editItinForm.title" placeholder="行程名稱" style="margin-bottom: 10px; font-weight: bold;" />
+                        <div class="form-grid-small">
+                            <input type="number" v-model="editItinForm.budget" placeholder="預算" />
+                            <input v-model="editItinForm.travel_time" placeholder="旅遊天數" />
+                            <input v-model="editItinForm.transport" placeholder="交通" />
+                        </div>
+                        <div class="button-group-small">
+                            <button @click="saveItineraryInfo" class="btn-save-small">儲存</button>
+                            <button @click="isEditingItin = false" class="btn-cancel-small">取消</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="itin-tabs">
+                    <button :class="{ active: activeTab === 'route' }" @click="activeTab = 'route'">📍 路線規劃</button>
+                    <button :class="{ active: activeTab === 'expenses' }" @click="activeTab = 'expenses'">💰 消費明細</button>
+                </div>
+
+                <div v-if="activeTab === 'route'" class="tab-content">
+                    <div v-if="(!activeItinerary.spots || activeItinerary.spots.length === 0)" class="empty-spots">
+                        此行程還沒有景點，請去首頁加入！
+                    </div>
+
+                    <div v-else>
+                        <div v-for="group in groupedSpotsByDay" :key="group.day" class="day-group">
+                            <h4 class="day-title">Day {{ group.day }}</h4>
+                            
+                            <draggable 
+                                v-model="group.items" 
+                                item-key="id" 
+                                group="spots" 
+                                @end="onDragEnd"
+                                class="drag-area"
+                            >
+                                <template #item="{ element }">
+                                    <div class="spot-item">
+                                        <div class="drag-handle">☰</div>
+                                        <img :src="getImageUrl(element.spot.id)" class="spot-thumb">
+                                        <div class="spot-content">
+                                            <strong>{{ element.spot.name }}</strong>
+                                            <p>{{ element.spot.location }} | {{ element.spot.category }}</p>
+                                        </div>
+                                        <button @click="deleteSpotFromItinerary(element.id)" class="btn-remove-spot">✕</button>
+                                    </div>
+                                </template>
+                            </draggable>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="activeTab === 'expenses'" class="tab-content">
+                    <ExpenseSection 
+                        :itineraryId="activeItinerary.id" 
+                        :members="allMembers" 
+                    />
                 </div>
             </div>
             <div v-else class="no-selection">
@@ -517,4 +654,92 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     border-radius: 10px;
     border: 1px solid #bbdefb;
 }
+
+/* 行程標籤樣式 */
+.itin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.itin-tabs button {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s;
+}
+
+.itin-tabs button:hover {
+    background: var(--input-bg);
+}
+
+.itin-tabs button.active {
+    color: var(--primary-color);
+    font-weight: bold;
+    border-bottom: 3px solid var(--primary-color);
+    margin-bottom: -12px; /* 讓底線貼齊邊界 */
+}
+
+/* 分天區塊樣式 */
+.day-group {
+    background: var(--input-bg);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.day-title {
+    margin: 0 0 10px 0;
+    color: var(--primary-color);
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 5px;
+}
+.btn-edit-small {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-left: 10px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+.btn-edit-small:hover {
+    background: var(--primary-color);
+    color: white;
+}
+.itin-detail-header {
+    margin-bottom: 20px;
+}
+.itin-meta-info {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 5px 0;
+}
+.edit-itin-info-form {
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px dashed var(--primary-color);
+}
+.form-grid-small {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+.button-group-small {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.btn-save-small { background: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; flex: 1; }
+.btn-cancel-small { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; flex: 1; }
 </style>
