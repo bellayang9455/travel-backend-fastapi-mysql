@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List
 
 # 建立專屬的 router，網址前綴設為 /api/expenses
-router = APIRouter(prefix="/api/expenses", tags=["expenses"])
+router = APIRouter(tags=["expenses"])
 
 @router.post("/", response_model=schemas.ExpenseOut, status_code=201)
 def create_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
