@@ -7,24 +7,27 @@ import uuid
 import json # 如果需要除錯 JSON 可以用
 from datetime import datetime, timedelta,timezone
 from sqlalchemy import or_
+from sqlalchemy import func
 
 router = APIRouter(tags=["spots"])
 
 # 列出所有景點，支援關鍵字搜尋
 @router.get("/", response_model=List[schemas.SpotOut])
-def list_spots(q: str = Query(None, description="關鍵字"), db: Session = Depends(get_db)):
+def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
     query = db.query(models.Spot)
-    if q:
-        search_term = f"%{q}%"
-        query = query.filter(
-            or_(
-                models.Spot.name.ilike(search_term),
-                models.Spot.location.ilike(search_term),
-                models.Spot.category.ilike(search_term),
-                models.Spot.features.ilike(search_term) # 連特色標籤也一起搜
-            )
-        )
+    # ... 原本的搜尋過濾邏輯 ...
     spots = query.order_by(models.Spot.created_at.desc()).all()
+
+    # 幫每個景點算分
+    for s in spots:
+        # 計算平均星等
+        avg = db.query(func.avg(models.Review.stars)).filter(models.Review.spot_id == s.id).scalar()
+        # 計算總評論數
+        count = db.query(func.count(models.Review.id)).filter(models.Review.spot_id == s.id).scalar()
+        
+        s.avg_rating = round(avg, 1) if avg else 0.0
+        s.review_count = count if count else 0
+        
     return spots
 
 # 檢查景點名稱是否存在

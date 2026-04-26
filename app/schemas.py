@@ -54,10 +54,11 @@ class SpotOut(SpotBase):
     id: str
     created_at: datetime
     region: Optional[str] = None
+    avg_rating: float = 0.0
+    review_count: int = 0
 
     class Config:
         from_attributes = True
-
 
 # -- Itinerary --
 class ItineraryBase(BaseModel):
