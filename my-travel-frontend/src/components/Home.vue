@@ -1,5 +1,5 @@
 <script setup>
-// 首頁景點列表 (版面精準修復版：解決位移、寬度不均、高度不一與文字溢出問題)
+// 首頁景點列表 (修正版：推薦文字支援換行)
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import api from '../api/axios.js'
@@ -51,11 +51,9 @@ const sortedSpots = computed(() => {
   return list
 })
 
-// 強化抓取邏輯：確保搜尋與重新整理評分時都能運作
+// 強化抓取邏輯
 const fetchSpots = async (keyword) => {
-  // 如果是從 ReviewSection 發出的事件（非字串），則維持當前搜尋關鍵字
   const searchK = (typeof keyword === 'string') ? keyword : (route.query.q || '');
-  
   loading.value = true
   try {
     const response = await api.get(`/api/spots`, { params: { q: searchK } })
@@ -138,7 +136,6 @@ watch(() => props.user, (newUser) => {
       <button @click="fetchSpots" class="retry-btn">🔄 再試一次</button>
     </div>
 
-    <!-- ✨ 核心網格佈局：修正寬度對齊 -->
     <div v-else class="grid-layout">
       <div 
         v-for="spot in sortedSpots" 
@@ -149,14 +146,13 @@ watch(() => props.user, (newUser) => {
       >
         <div class="expandable-card">
           
-          <!-- 👈 左側資訊側：寬度鎖定 -->
+          <!-- 👈 左側資訊側 -->
           <div class="card-info-side">
             <div class="image-box">
               <img :src="getImageUrl(spot.id)" alt="景點圖片">
               <span class="category-tag">{{ spot.category || '未分類' }}</span>
               <span class="location-tag" v-if="spot.location">📍 {{ spot.location }}</span>
               
-              <!-- 星級標籤：僅在人數足夠時顯示 -->
               <div v-if="(spot.review_count || 0) >= 3" class="img-rating-badge">
                  ★ {{ spot.avg_rating }}
               </div>
@@ -181,9 +177,10 @@ watch(() => props.user, (newUser) => {
               </div>
 
               <div class="footer">
+                 <!-- ✨ 修正後的推薦文字區塊 -->
                  <div class="rec-text">
                      <span class="label">推薦：</span>
-                     <span class="rec-content">{{ spot.activities?.activities?.slice(0, 2).join('、') || '自由探索' }}</span>
+                     <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
                  </div>
                  <div class="actions">
                     <button @click.stop="openEditModal(spot)" class="btn-circle warn" title="編輯">✏️</button>
@@ -238,7 +235,6 @@ watch(() => props.user, (newUser) => {
 
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
 
-/* 🏛️ 網格系統：強制 minmax(0, 1fr) 確保每欄絕對均分 */
 .grid-layout {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -253,7 +249,7 @@ watch(() => props.user, (newUser) => {
 .card-wrapper {
   transition: all 0.3s ease;
   cursor: pointer;
-  width: 100%; /* ✨ 確保寬度佔滿網格 */
+  width: 100%;
 }
 
 .card-wrapper.is-expanded {
@@ -276,7 +272,6 @@ watch(() => props.user, (newUser) => {
   box-shadow: 0 12px 30px var(--shadow-color);
 }
 
-/* 👈 左側資訊：展開時精準佔據原本的一格空間 */
 .card-info-side {
   flex: 0 0 100%;
   display: flex;
@@ -290,7 +285,6 @@ watch(() => props.user, (newUser) => {
   flex: 0 0 calc(50% - (var(--gap) / 2));
 }
 
-/* 👉 右側評論 */
 .card-review-side {
   flex: 0 0 calc(50% + (var(--gap) / 2));
   border-left: 1px solid var(--border-color);
@@ -305,7 +299,6 @@ watch(() => props.user, (newUser) => {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* 內容細節 */
 .image-box { position: relative; height: 170px; flex-shrink: 0; overflow: hidden; }
 .image-box img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -328,22 +321,44 @@ watch(() => props.user, (newUser) => {
 .tags-row { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; height: 24px; overflow: hidden; }
 .feature-tag { background: var(--input-bg); color: var(--primary-color); border: 1px solid var(--border-color); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
 
-.footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
-.rec-text { font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 10px; }
-.label { font-weight: bold; }
+/* 底部按鈕區 */
+.footer { 
+  margin-top: auto; 
+  border-top: 1px solid var(--border-color); 
+  padding-top: 15px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; /* 改為居中對齊，讓按鈕跟換行後的文字視覺上比較平衡 */
+}
 
-.actions { display: flex; gap: 8px; }
+/* 推薦文字區塊 */
+.rec-text { 
+  font-size: 0.8rem; 
+  color: var(--text-secondary); 
+  flex: 1; 
+  margin-right: 10px;
+  line-height: 1.4;
+  /* 允許換行，並設定最多顯示兩行 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label { font-weight: bold; }
+.rec-content { color: var(--text-color); }
+
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
 .btn-circle { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: transform 0.2s; }
 .btn-circle:hover { transform: scale(1.15); }
 .btn-circle.primary { background: var(--primary-color); color: white; }
 .btn-circle.warn { background: #f39c12; color: white; }
 
-/* RWD */
 @media (max-width: 600px) { 
   .card-wrapper.is-expanded { grid-column: span 1; }
   .expandable-card { flex-direction: column; height: auto; min-height: 420px; }
   .is-expanded .card-info-side { flex: 0 0 100%; }
-  .card-review-side { border-left: none; border-top: 1px solid var(--border-color); }
+  .card-review-side { border-left: none; border-top: 1px solid var(--border-color); flex: 0 0 auto; }
 }
 
 .modal-inner { width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; background: var(--card-bg); border-radius: 16px; }
