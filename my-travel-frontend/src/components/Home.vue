@@ -111,6 +111,22 @@ watch(() => props.user, (newUser) => {
 </script>
 
 <template>
+<div class="home-page">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">探索你的下一趟完美旅程</h1>
+        
+      <div class="search-card">
+          <div class="search-tabs">
+            <span class="active">🏖️ 找景點</span>
+          </div>
+          <div class="search-inputs">
+            <input type="text" placeholder="你想去哪裡？ (例如：台北、東京)" v-model="searchQuery" @keyup.enter="handleSearch" />
+            <button class="btn-primary search-btn" @click="handleSearch">搜尋</button>
+          </div>
+        </div>
+      </div>
+    </div>
   <div class="spot-container">
     <div class="header">
       <div class="header-left">
@@ -223,6 +239,7 @@ watch(() => props.user, (newUser) => {
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <style scoped>
@@ -362,4 +379,76 @@ watch(() => props.user, (newUser) => {
 }
 
 .modal-inner { width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; background: var(--card-bg); border-radius: 16px; }
+
+.hero-section {
+  position: relative;
+  background-image: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2000&auto=format&fit=crop'); /* 替換成你的旅遊大圖 */
+  background-size: cover;
+  background-position: center;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 60px; /* 留空間給浮動的搜尋卡片 */
+  border-radius: 10px;
+}
+
+.hero-title {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.search-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 20px;
+  width: 100%;
+  max-width: 800px;
+  position: absolute;
+  bottom: -40px; /* 讓卡片往下凸出一半 */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.search-tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.search-tabs span {
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.search-tabs span.active {
+  color: var(--primary-color);
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 11px; /* 微調對齊底線 */
+}
+
+.search-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.search-inputs input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+
+.search-btn {
+  width: 120px;
+  font-size: 1.1rem;
+}
 </style>
