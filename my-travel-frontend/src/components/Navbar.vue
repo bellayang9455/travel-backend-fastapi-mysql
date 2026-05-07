@@ -21,7 +21,11 @@ const emit = defineEmits([
   'filterCategory',  
   'toggleTheme',
   'selectCategory',
-  'logout'
+  'logout',
+  'openLogin',  
+  'openRegister',
+  'loginSuccess', 
+  'changePage'
 ])
 
 // 變數
@@ -175,8 +179,7 @@ const handleFilterClick = (type, value) => {
           </template>
           <template v-else>
             <div class="auth-buttons">
-              <button class="auth-btn login" @click="handleMenuClick('login')">登入</button>
-              <button class="auth-btn register" @click="handleMenuClick('register')">註冊</button>
+              <button class="auth-btn login" @click="emit('openLogin')">登入 / 註冊</button>
             </div>
           </template>
         </div>
@@ -373,5 +376,39 @@ const handleFilterClick = (type, value) => {
 @media (max-width: 600px) {
   .search-bar { display: none; /* 手機版空間不夠，可考慮把搜尋移到側邊欄或用 icon 取代 */ }
   .logo-area .title { font-size: 16px; }
+}
+
+/* Navbar.vue 的 style */
+.navbar {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* 輕微的陰影取代生硬的邊框 */
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-area {
+  color: var(--primary-color); /* Logo 用標誌性藍色 */
+  font-weight: 900;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.menu-btn {
+  color: var(--text-color);
+  background: transparent;
+  border: none;
+  font-weight: 500;
+  padding: 8px 12px;
+}
+
+.menu-btn:hover {
+  color: var(--primary-color);
+  background-color: #f0f4ff; /* 淺藍色 hover 背景 */
+  border-radius: var(--radius-md);
 }
 </style>

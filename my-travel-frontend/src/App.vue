@@ -3,11 +3,42 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
+import Login from './components/Login.vue'               // 新增引入
+import RegisterForm from './components/RegisterForm.vue' // 新增引入
 
 const router = useRouter()
 const route = useRoute() // 用來監聽網址變化
 const isDarkMode = ref(false)
 const user = ref(null)
+
+// 新增：控制 Modal 顯示的變數
+const showLoginModal = ref(false)
+const showRegisterModal = ref(false)
+
+// 開啟與關閉彈窗的方法
+const openLogin = () => {
+  showLoginModal.value = true
+  showRegisterModal.value = false
+}
+
+const openRegister = () => {
+  showRegisterModal.value = true
+  showLoginModal.value = false
+}
+
+const closeModals = () => {
+  showLoginModal.value = false
+  showRegisterModal.value = false
+}
+
+
+
+const handleRegisterSuccess = (userData) => {
+  if (userData) {
+    user.value = userData
+  }
+  closeModals() // 註冊成功後關閉彈窗
+}
 
 // 用來記住使用者目前在側邊欄選了什麼分類
 const currentCategory = ref('全部')
@@ -62,9 +93,19 @@ const handleLoginSuccess = (userData) => {
   if (userData) {
     user.value = userData
     sessionStorage.setItem('user', JSON.stringify(userData))
-    //localStorage.setItem('user', JSON.stringify(userData))
+    console.log("✅ 登入成功:", userData.name)
   }
-  router.push({ name: 'home' })
+  closeModals() // 關鍵：登入後關閉彈窗
+  // 如果原本就在首頁就不動，如果需要跳轉才用 router.push
+}
+
+const handleRegisterSuccess = (userData) => {
+  if (userData) {
+    user.value = userData
+    sessionStorage.setItem('user', JSON.stringify(userData))
+  }
+  closeModals() // 註冊後關閉彈窗
+  alert('註冊成功！')
 }
 
 // --- 登出處理 ---
@@ -131,7 +172,9 @@ watch(isDarkMode, (newVal) => {
       @logout="handleLogout"
       @selectCategory="handleSelectCategory" 
       @filterLocation="handleFilterLocation"
-      />
+      @openLogin="openLogin"         
+      @openRegister="openRegister"
+    />
 
     <main class="content-area">
       <router-view v-slot="{ Component }">
@@ -142,13 +185,26 @@ watch(isDarkMode, (newVal) => {
             :initialCategory="currentCategory" 
             :isLoggedIn="!!user"
             @loginSuccess="handleLoginSuccess"
-            @registerSuccess="handleLoginSuccess"
             @submitSuccess="() => router.push({ name: 'home' })"
-            @changePage="switchPage"
           />
         </keep-alive>
       </router-view>
     </main>
+
+    <div v-if="showLoginModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-card">
+        <button class="modal-close" @click="closeModals">✕</button>
+        <Login @loginSuccess="handleLoginSuccess" @changePage="openRegister" />
+      </div>
+    </div>
+
+    <div v-if="showRegisterModal" class="modal-overlay" @click.self="closeModals">
+      <div class="modal-card">
+        <button class="modal-close" @click="closeModals">✕</button>
+        <RegisterForm @registerSuccess="handleRegisterSuccess" @changePage="openLogin" />
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -225,5 +281,51 @@ body {
 .hero-header p {
   color: var(--text-secondary);
   font-size: 1rem;
+}
+/* --- 彈窗 Modal 樣式 --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* 半透明黑背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* 確保在 Navbar 之上 */
+  backdrop-filter: blur(4px); /* 背景模糊效果，更有質感 */
+}
+
+.modal-card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 16px;
+  position: relative;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  animation: fadeInDown 0.3s ease-out; /* 彈入動畫 */
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  color: var(--text-color);
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
