@@ -413,10 +413,10 @@ const copyCode = (code) => {
 
                 <div v-if="(!activeItinerary.spots || activeItinerary.spots.length === 0)" class="empty-spots">
                     此行程還沒有景點，請去首頁加入！
-                </div>
-                </Transition>
+                </div>            
         </div>
     </div>
+  </div>
   </div>
 </template>
 
