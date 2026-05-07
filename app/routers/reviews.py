@@ -5,7 +5,7 @@ from ..database import get_db
 from .. import models, schemas
 from ..utils import gen_uuid
 
-router = APIRouter(prefix="/reviews", tags=["reviews"])
+router = APIRouter(tags=["reviews"])
 
 @router.get("/", response_model=List[schemas.ReviewOut])
 def list_reviews(

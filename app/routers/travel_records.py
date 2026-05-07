@@ -5,7 +5,7 @@ from ..database import get_db
 from .. import models, schemas
 from ..utils import gen_uuid
 
-router = APIRouter(prefix="/travel-records", tags=["travel_records"])
+router = APIRouter(tags=["travel_records"])
 
 @router.post("/", response_model=schemas.TravelRecordOut, status_code=201)
 def create_travel_record(payload: schemas.TravelRecordCreate, db: Session = Depends(get_db)):

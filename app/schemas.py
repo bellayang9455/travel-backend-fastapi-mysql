@@ -53,17 +53,18 @@ class SpotCreate(SpotBase):
 class SpotOut(SpotBase):
     id: str
     created_at: datetime
+    region: Optional[str] = None
+    avg_rating: float = 0.0
+    review_count: int = 0
 
     class Config:
         from_attributes = True
-
 
 # -- Itinerary --
 class ItineraryBase(BaseModel):
     title: str
     budget: Optional[int] = None
     travel_time: Optional[str] = None
-    lodging: Optional[str] = None
     transport: Optional[str] = None
 
 class ItineraryCreate(ItineraryBase):
@@ -72,6 +73,7 @@ class ItineraryCreate(ItineraryBase):
 
 class ItineraryItemUpdate(BaseModel):
     item_id: int
+    new_day_order: int
     new_order: int
 
 class ItinerarySpotOut(BaseModel):
@@ -133,6 +135,31 @@ class TravelRecordOut(TravelRecordBase):
     id: str
     user_id: str
     itinerary_id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# -- AccountingRecord --
+class SplitDetail(BaseModel):
+    user_id: str
+    amount: float
+
+# 花費 (Expense) 的基礎模型
+class ExpenseBase(BaseModel):
+    itinerary_id: str       # 屬於哪個行程
+    payer_id: str           # 誰付的錢
+    description: str        # 買了什麼 (例如: 高鐵票)
+    amount: float           # 總金額
+    currency: Optional[str] = "TWD"
+    split_details: List[SplitDetail]  # 規定須傳入 List 格式
+
+class ExpenseCreate(ExpenseBase):
+    pass
+
+class ExpenseOut(ExpenseBase):
+    id: str
     created_at: datetime
 
     class Config:

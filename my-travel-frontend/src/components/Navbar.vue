@@ -18,8 +18,7 @@ const props = defineProps({
 const emit = defineEmits([
   'changePage', 
   'filterLocation', 
-  'filterCategory', 
-  'filterAccommodation', 
+  'filterCategory',  
   'toggleTheme',
   'selectCategory',
   'logout'
@@ -83,38 +82,18 @@ const categories = [
   { name: '✨ 其他', value: '其他' }
 ]
 
-const accommodations = [
-  { name: '🏨 飯店', value: '飯店' },
-  { name: '🏩 民宿', value: '民宿' },
-  { name: '🏕️ 露營', value: '露營' },
-  { name: '🛏️ 青年旅館', value: '青年旅館' },
-  { name: '🏠 公寓式住宿', value: '公寓式住宿' }
-]
-
 // 方法
-
-// 檢查登入狀態
-const checkLoginStatus = () => {
-  const token = localStorage.getItem('token')
-  const name = localStorage.getItem('userName')
-  
-  if (token && name) {
-    isLoggedIn.value = true
-    userName.value = name
-  } else {
-    isLoggedIn.value = false
-    userName.value = ''
-  }
-}
-
 // 登出功能
 const handleLogout = () => {
   if (confirm('確定要登出嗎？')) {
     // 1. 清除 localStorage
-    localStorage.removeItem('token')
+    /*localStorage.removeItem('token')
     localStorage.removeItem('user_id')
-    localStorage.removeItem('user_name')
+    localStorage.removeItem('user_name')*/
     
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('user_id')
+    sessionStorage.removeItem('user_name')
     // 2. 跳轉回登入頁或首頁
     emit('logout')
     
@@ -151,13 +130,12 @@ const handleMenuClick = (pageName) => {
   isSidebarOpen.value = false
 } 
 
-// 篩選功能 (地點、分類、住宿類型)
+// 篩選功能 (洲際、景點分類類型)
 const handleFilterClick = (type, value) => {
   if (type === 'location') emit('filterLocation', value)
   if (type === 'category') emit('selectCategory', value)
-  if (type === 'accommodation') emit('filterAccommodation', value)
   
-  emit('changePage', 'home') // 切回首頁看結果
+  //emit('changePage', 'home') // 切回首頁看結果
   isSidebarOpen.value = false // 關閉側邊欄
 }
 </script>
@@ -253,17 +231,6 @@ const handleFilterClick = (type, value) => {
             </a>
           </div>
         </details>
-
-        <details class="nav-details">
-          <summary class="nav-item">🛏️ 住宿類型</summary>
-          <div class="details-content">
-             <a @click="handleFilterClick('accommodation', '')">全部住宿</a>
-             <a v-for="acc in accommodations" :key="acc.value" @click="handleFilterClick('accommodation', acc.value)">
-               {{ acc.name }}
-             </a>
-          </div>
-        </details>
-
       </nav>
     </aside>
   </div>

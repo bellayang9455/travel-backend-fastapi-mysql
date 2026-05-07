@@ -14,6 +14,12 @@ const currentCategory = ref('全部')
 
 // --- 導航邏輯 ---
 const switchPage = (pageName) => {
+  if (pageName === 'home') {
+    currentCategory.value = '全部' // 1. 把分類重置為全部
+    router.push({ path: '/' })     // 2. 用 path: '/' 強制清掉所有網址參數 (不要用 name)
+    return
+  }
+  
   const routeMap = {
     'home': 'home',
     'add': 'add',
@@ -33,11 +39,30 @@ const handleSelectCategory = (categoryName) => {
   switchPage('home') // 切換分類時，確保跳回首頁看結果
 }
 
+const handleFilterLocation = (locationValue) => {
+  console.log("收到地點了！準備切換到：", locationValue)
+  // 把目前的網址參數複製一份
+  const currentQuery = { ...route.query }
+
+  if (locationValue === '') {
+    // 如果點「全部地點」，就把 location 參數刪掉
+    delete currentQuery.location
+  } else {
+    // 否則就把點擊的洲際 (例如 'Europe') 放進參數裡
+    currentQuery.location = locationValue
+  }
+
+  // 透過 Vue Router 推送新網址
+  // 加上 path: '/' 確保如果使用者在其他頁面點擊側邊欄，會被強制帶回首頁看結果
+  router.push({ path: '/', query: currentQuery })
+}
+
 // --- 登入成功處理 ---
 const handleLoginSuccess = (userData) => {
   if (userData) {
     user.value = userData
-    localStorage.setItem('user', JSON.stringify(userData))
+    sessionStorage.setItem('user', JSON.stringify(userData))
+    //localStorage.setItem('user', JSON.stringify(userData))
   }
   router.push({ name: 'home' })
 }
@@ -45,10 +70,14 @@ const handleLoginSuccess = (userData) => {
 // --- 登出處理 ---
 const handleLogout = () => {
   user.value = null
-  localStorage.removeItem('user')
+  /*localStorage.removeItem('user')
   localStorage.removeItem('token')
   localStorage.removeItem('user_name')
-  localStorage.removeItem('user_id')
+  localStorage.removeItem('user_id')*/
+  sessionStorage.removeItem('user')
+  sessionStorage.removeItem('token')
+  sessionStorage.removeItem('user_name')
+  sessionStorage.removeItem('user_id')
   alert('已登出')
   router.push({ name: 'login' })
 }
@@ -64,15 +93,21 @@ onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') isDarkMode.value = true
   
-  const token = localStorage.getItem('token')
-  const storeUser = localStorage.getItem('user')
-  
+  const token = sessionStorage.getItem('token')
+  const storeUser = sessionStorage.getItem('user')
+
   if (token && storeUser) {
-    try {
+      // 如果有 token，就把 user 物件補回來
+      try {
+      // 成功解析 JSON 並塞回 user 變數
       user.value = JSON.parse(storeUser)
+      console.log("✅ 偵測到 Session，已自動恢復登入狀態")
     } catch (e) {
       console.error("User parse error", e)
+      user.value = null
     }
+  } else {
+    console.log("❌ 無 Session 資料，保持登出狀態")
   }
 })
 
