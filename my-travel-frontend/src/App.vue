@@ -217,13 +217,18 @@ body {
 }
 
 .content-area {
-  padding-top: 80px; 
-  max-width: 1200px; 
+  padding-top: 90px;
+  /* 預設展開時：1200px 內容 + 250px 側邊欄寬度 = 1450px */
+  max-width: 1450px; 
   margin: 0 auto; 
-  padding-left: 20px;
   padding-right: 20px;
   padding-bottom: 60px;
   min-height: 100vh;
+  
+  /* 用 padding 推開左側側邊欄的空間 (250px側邊欄 + 20px留白) */
+  padding-left: 270px; 
+  /* 設定平滑的過渡動畫 */
+  transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s ease;
 }
 
 .hero-header {
@@ -292,5 +297,20 @@ body {
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+/* 👇 關鍵新增：當 Navbar 處於收合狀態 (.sidebar-collapsed) 時，自動調整後面的 .content-area */
+.nav-container.sidebar-collapsed + .content-area {
+  padding-left: 20px; /* 左側預留空間歸零，只留 20px 內距 */
+  max-width: 1200px;  /* 寬度恢復成正常的 1200px 並完美置中 */
+}
+
+/* 手機與平板模式：側邊欄本來就會自動隱藏，所以全部取消左側預留空間 */
+@media (max-width: 992px) {
+  .content-area,
+  .nav-container.sidebar-collapsed + .content-area {
+    padding-left: 20px;
+    margin-left: 0;
+    max-width: 100%;
+  }
 }
 </style>
