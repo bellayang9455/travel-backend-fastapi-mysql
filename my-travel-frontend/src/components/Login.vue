@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import api from '../api/axios.js'
 
 // 定義可以發送的事件，對應 App.vue 裡的 @loginSuccess
-const emit = defineEmits(['loginSuccess'])
+const emit = defineEmits(['loginSuccess','changePage'])
 
 // 資料
 const loginData = ref({
@@ -106,6 +106,9 @@ const handleLogin = async () => {
       <button @click="handleLogin" class="submit-btn" :disabled="isLoading">
         {{ isLoading ? '登入中...' : '登入' }}
       </button>
+      <div class="toggle-auth-text">
+        還沒註冊嗎？ <a href="#" @click.prevent="emit('changePage')">點此註冊</a>
+      </div>
       </div>
   </div>
 </template>
@@ -197,5 +200,30 @@ input:focus {
 
 .submit-btn:hover:not(:disabled) {
   opacity: 0.9;
+}
+.toggle-auth-text {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.toggle-auth-text a {
+  color: #337ab7;
+  text-decoration: none;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.toggle-auth-text a:hover {
+  text-decoration: underline;
+}
+
+/* 確保 form-container 不會撐滿整個螢幕 */
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px; /* 稍微縮小間距 */
 }
 </style>

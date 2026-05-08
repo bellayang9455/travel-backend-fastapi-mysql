@@ -22,10 +22,7 @@ const emit = defineEmits([
   'toggleTheme',
   'selectCategory',
   'logout',
-  'openLogin',  
-  'openRegister',
-  'loginSuccess', 
-  'changePage'
+  'openLogin',
 ])
 
 // 變數

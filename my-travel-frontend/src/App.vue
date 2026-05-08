@@ -1,5 +1,4 @@
 <script setup>
-// App.vue 是整個應用的根組件，負責管理全局狀態如使用者登入狀態和主題切換
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
@@ -7,15 +6,14 @@ import Login from './components/Login.vue'               // 新增引入
 import RegisterForm from './components/RegisterForm.vue' // 新增引入
 
 const router = useRouter()
-const route = useRoute() // 用來監聽網址變化
+const route = useRoute()
 const isDarkMode = ref(false)
 const user = ref(null)
 
-// 新增：控制 Modal 顯示的變數
+// --- 👇 彈窗控制邏輯 👇 ---
 const showLoginModal = ref(false)
 const showRegisterModal = ref(false)
 
-// 開啟與關閉彈窗的方法
 const openLogin = () => {
   showLoginModal.value = true
   showRegisterModal.value = false
@@ -30,32 +28,20 @@ const closeModals = () => {
   showLoginModal.value = false
   showRegisterModal.value = false
 }
+// --- 👆 彈窗控制邏輯 👆 ---
 
-
-
-const handleRegisterSuccess = (userData) => {
-  if (userData) {
-    user.value = userData
-  }
-  closeModals() // 註冊成功後關閉彈窗
-}
-
-// 用來記住使用者目前在側邊欄選了什麼分類
 const currentCategory = ref('全部')
 
-// --- 導航邏輯 ---
 const switchPage = (pageName) => {
   if (pageName === 'home') {
-    currentCategory.value = '全部' // 1. 把分類重置為全部
-    router.push({ path: '/' })     // 2. 用 path: '/' 強制清掉所有網址參數 (不要用 name)
+    currentCategory.value = '全部'
+    router.push({ path: '/' })
     return
   }
   
   const routeMap = {
     'home': 'home',
     'add': 'add',
-    'register': 'register',
-    'login': 'login',
     'user': 'user',
     'ai_planner': 'ai-planner'
   }
@@ -64,39 +50,28 @@ const switchPage = (pageName) => {
   router.push({ name: targetRoute })
 }
 
-// 接收 Navbar 傳來的分類點擊事件
 const handleSelectCategory = (categoryName) => {
   currentCategory.value = categoryName
-  switchPage('home') // 切換分類時，確保跳回首頁看結果
+  switchPage('home')
 }
 
 const handleFilterLocation = (locationValue) => {
-  console.log("收到地點了！準備切換到：", locationValue)
-  // 把目前的網址參數複製一份
   const currentQuery = { ...route.query }
-
   if (locationValue === '') {
-    // 如果點「全部地點」，就把 location 參數刪掉
     delete currentQuery.location
   } else {
-    // 否則就把點擊的洲際 (例如 'Europe') 放進參數裡
     currentQuery.location = locationValue
   }
-
-  // 透過 Vue Router 推送新網址
-  // 加上 path: '/' 確保如果使用者在其他頁面點擊側邊欄，會被強制帶回首頁看結果
   router.push({ path: '/', query: currentQuery })
 }
 
-// --- 登入成功處理 ---
+// --- 👇 修改登入與註冊成功處理 👇 ---
 const handleLoginSuccess = (userData) => {
   if (userData) {
     user.value = userData
     sessionStorage.setItem('user', JSON.stringify(userData))
-    console.log("✅ 登入成功:", userData.name)
   }
-  closeModals() // 關鍵：登入後關閉彈窗
-  // 如果原本就在首頁就不動，如果需要跳轉才用 router.push
+  closeModals() // 登入成功後關閉彈窗
 }
 
 const handleRegisterSuccess = (userData) => {
@@ -104,32 +79,26 @@ const handleRegisterSuccess = (userData) => {
     user.value = userData
     sessionStorage.setItem('user', JSON.stringify(userData))
   }
-  closeModals() // 註冊後關閉彈窗
-  alert('註冊成功！')
+  closeModals() // 註冊成功後關閉彈窗
+  alert('註冊成功！已自動為您登入。')
 }
+// --- 👆 修改登入與註冊成功處理 👆 ---
 
-// --- 登出處理 ---
 const handleLogout = () => {
   user.value = null
-  /*localStorage.removeItem('user')
-  localStorage.removeItem('token')
-  localStorage.removeItem('user_name')
-  localStorage.removeItem('user_id')*/
   sessionStorage.removeItem('user')
   sessionStorage.removeItem('token')
   sessionStorage.removeItem('user_name')
   sessionStorage.removeItem('user_id')
   alert('已登出')
-  router.push({ name: 'login' })
+  router.push({ name: 'home' }) // 登出後回首頁
 }
 
-// --- 主題切換 ---
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
 }
 
-// --- 初始化 ---
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme === 'dark') isDarkMode.value = true
@@ -138,21 +107,14 @@ onMounted(() => {
   const storeUser = sessionStorage.getItem('user')
 
   if (token && storeUser) {
-      // 如果有 token，就把 user 物件補回來
       try {
-      // 成功解析 JSON 並塞回 user 變數
       user.value = JSON.parse(storeUser)
-      console.log("✅ 偵測到 Session，已自動恢復登入狀態")
     } catch (e) {
-      console.error("User parse error", e)
       user.value = null
     }
-  } else {
-    console.log("❌ 無 Session 資料，保持登出狀態")
   }
 })
 
-// --- 監聽主題 ---
 watch(isDarkMode, (newVal) => {
   document.body.style.backgroundColor = newVal ? '#121212' : '#fafafa'
 })
@@ -173,7 +135,6 @@ watch(isDarkMode, (newVal) => {
       @selectCategory="handleSelectCategory" 
       @filterLocation="handleFilterLocation"
       @openLogin="openLogin"         
-      @openRegister="openRegister"
     />
 
     <main class="content-area">
@@ -186,6 +147,7 @@ watch(isDarkMode, (newVal) => {
             :isLoggedIn="!!user"
             @loginSuccess="handleLoginSuccess"
             @submitSuccess="() => router.push({ name: 'home' })"
+            @changePage="switchPage"
           />
         </keep-alive>
       </router-view>
@@ -209,7 +171,7 @@ watch(isDarkMode, (newVal) => {
 </template>
 
 <style>
-/* CSS 完全保持不變，不用動 */
+/* ...保留你原本所有的 CSS... */
 :root {
   --bg-color: #fafafa;
   --text-color: #2c3e50;
@@ -282,36 +244,39 @@ body {
   color: var(--text-secondary);
   font-size: 1rem;
 }
-/* --- 彈窗 Modal 樣式 --- */
+
+/* 👇 新增：彈窗 Modal 的 CSS 👇 */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* 半透明黑背景 */
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000; /* 確保在 Navbar 之上 */
-  backdrop-filter: blur(4px); /* 背景模糊效果，更有質感 */
+  z-index: 2000;
+  backdrop-filter: blur(3px);
 }
 
 .modal-card {
   background: var(--card-bg);
-  padding: 20px;
+  padding: 10px;
   border-radius: 16px;
   position: relative;
   width: 90%;
   max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  animation: fadeInDown 0.3s ease-out; /* 彈入動畫 */
+  animation: fadeInDown 0.3s ease-out;
 }
 
 .modal-close {
   position: absolute;
   top: 15px;
-  right: 15px;
+  right: 20px;
   background: none;
   border: none;
   font-size: 1.5rem;
