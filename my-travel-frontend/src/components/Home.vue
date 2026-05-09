@@ -160,6 +160,7 @@ watch(() => props.user, (newUser) => {
         </select>
       </div>
     </div>
+  </div>
 
     <div v-if="loading" class="state-box loading">
       <span class="spinner">⏳</span> 正在讀取資料...
@@ -222,14 +223,17 @@ watch(() => props.user, (newUser) => {
     <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
       <div class="detail-modal-card">
         <button class="modal-close-btn" @click="closeDetailModal">✕</button>
-        
+      </div>    
         <div class="detail-layout">
+          <!-- 左側資訊側 -->
           <div class="detail-info-side">
             <div class="detail-image-box">
               <img :src="getImageUrl(currentDetailSpot.id)" alt="景點圖片">
               <div class="detail-img-overlay">
                 <span class="detail-category">{{ currentDetailSpot.category || '未分類' }}</span>
-          <!-- 左側資訊側 -->
+              </div>
+            </div>
+          
           <div class="card-info-side">
             <div class="image-box">
               <img :src="getImageUrl(spot.id)" alt="景點圖片">
@@ -294,8 +298,7 @@ watch(() => props.user, (newUser) => {
           </div>
 
           <div class="detail-review-side">
-             <ReviewSection 
-              :spotId="currentDetailSpot.id" 
+             
           <!-- 右側評論側 -->
           <div v-if="expandedSpotId === spot.id" class="card-review-side" @click.stop>
             <ReviewSection 
@@ -327,6 +330,7 @@ watch(() => props.user, (newUser) => {
       </div>
     </div>
   </div>
+</div>
 </div>
 </template>
 
