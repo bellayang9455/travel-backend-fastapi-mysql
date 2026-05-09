@@ -462,6 +462,9 @@ const handleFilterClick = (type, value) => {
   gap: 12px; 
   justify-content: center; 
 }
+.user-info { background: none; border: none; display: flex; align-items: center; gap: 10px; font-weight: bold; color: var(--primary-color);}
+.logout-btn-small { background: none; border: none; cursor: pointer; font-size: 18px; transition: 0.2s; color: var(--text-color);}
+.logout-btn-small:hover { transform: scale(1.1); }
 
 .btn-confirm { 
   flex: 1; 

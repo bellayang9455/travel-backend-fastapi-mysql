@@ -229,6 +229,15 @@ watch(() => props.user, (newUser) => {
               <img :src="getImageUrl(currentDetailSpot.id)" alt="景點圖片">
               <div class="detail-img-overlay">
                 <span class="detail-category">{{ currentDetailSpot.category || '未分類' }}</span>
+          <!-- 左側資訊側 -->
+          <div class="card-info-side">
+            <div class="image-box">
+              <img :src="getImageUrl(spot.id)" alt="景點圖片">
+              <span class="category-tag">{{ spot.category || '未分類' }}</span>
+              <span class="location-tag" v-if="spot.location">📍 {{ spot.location }}</span>
+              
+              <div v-if="(spot.review_count || 0) >= 3" class="img-rating-badge">
+                 ★ {{ spot.avg_rating }}
               </div>
             </div>
             
@@ -270,6 +279,16 @@ watch(() => props.user, (newUser) => {
               <div class="detail-actions">
                 <button @click="openEditModal(currentDetailSpot)" class="btn-action btn-edit">✏️ 編輯資訊</button>
                 <button @click="openAddModal(currentDetailSpot.id)" class="btn-action btn-add">📅 加入我的行程</button>
+              <div class="footer">
+                 <!-- =推薦文字區塊 -->
+                 <div class="rec-text">
+                     <span class="label">推薦：</span>
+                     <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
+                 </div>
+                 <div class="actions">
+                    <button @click.stop="openEditModal(spot)" class="btn-circle warn" title="編輯">✏️</button>
+                    <button @click.stop="openAddModal(spot.id)" class="btn-circle primary" title="加入行程">📅</button>
+                 </div>
               </div>
             </div>
           </div>
@@ -277,6 +296,10 @@ watch(() => props.user, (newUser) => {
           <div class="detail-review-side">
              <ReviewSection 
               :spotId="currentDetailSpot.id" 
+          <!-- 右側評論側 -->
+          <div v-if="expandedSpotId === spot.id" class="card-review-side" @click.stop>
+            <ReviewSection 
+              :spotId="spot.id" 
               :user="props.user" 
               @submitSuccess="fetchSpots"
             />
