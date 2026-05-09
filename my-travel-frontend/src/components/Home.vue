@@ -146,7 +146,7 @@ watch(() => props.user, (newUser) => {
       >
         <div class="expandable-card">
           
-          <!-- 👈 左側資訊側 -->
+          <!-- 左側資訊側 -->
           <div class="card-info-side">
             <div class="image-box">
               <img :src="getImageUrl(spot.id)" alt="景點圖片">
@@ -177,7 +177,7 @@ watch(() => props.user, (newUser) => {
               </div>
 
               <div class="footer">
-                 <!-- ✨ 修正後的推薦文字區塊 -->
+                 <!-- =推薦文字區塊 -->
                  <div class="rec-text">
                      <span class="label">推薦：</span>
                      <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
@@ -190,7 +190,7 @@ watch(() => props.user, (newUser) => {
             </div>
           </div>
 
-          <!-- 👉 右側評論側 -->
+          <!-- 右側評論側 -->
           <div v-if="expandedSpotId === spot.id" class="card-review-side" @click.stop>
             <ReviewSection 
               :spotId="spot.id" 
