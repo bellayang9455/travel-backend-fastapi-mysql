@@ -117,7 +117,6 @@ def create_itinerary(payload: schemas.ItineraryCreate, db: Session = Depends(get
         title=payload.title,
         budget=payload.budget,
         travel_time=payload.travel_time,
-        lodging=payload.lodging,
         transport=payload.transport,
         owner_user_id=payload.owner_user_id,
     )
@@ -191,11 +190,10 @@ def reorder_itinerary(
     db: Session = Depends(get_db)
 ):
     for item in items:
-        # 這裡的 item.item_id 是 ItinerarySpot 的 ID
-        db_item = db.query(models.ItinerarySpot).filter(models.ItinerarySpot.id == item.item_id).first()
+        db_item = db.query(models.ItinerarySpot).filter(models.ItinerarySpot.id == item.item_id).first() 
         
         if db_item and db_item.itinerary_id == itinerary_id:
-            db_item.day_order = item.new_order
+            db_item.day_order = item.new_day_order # ✅ 改用 .new_day_order
             
     db.commit()
     return {"message": "Order updated"}
@@ -260,3 +258,48 @@ def create_itinerary_from_ai(request: SaveAiTripRequest, db: Session = Depends(g
         db.rollback()
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=f"儲存行程失敗: {str(e)}")
+    
+@router.get("/{itinerary_id}/members")
+def get_itinerary_members(itinerary_id: str, db: Session = Depends(get_db)):
+    itinerary = db.query(models.Itinerary).filter(models.Itinerary.id == itinerary_id).first()
+    
+    if not itinerary:
+        raise HTTPException(status_code=404, detail="找不到此行程")
+
+    # ✨ 核心魔法：把主揪和所有共編者的名字，塞進同一個陣列裡
+    members = [itinerary.owner.name] # 先放主揪
+    for user in itinerary.collaborators:
+        members.append(user.name)    # 把朋友也加進去
+        
+    return {"members": members} 
+    # 回傳結果會長這樣：{"members": ["你的名字", "朋友A", "朋友B"]}
+    
+@router.put("/{itinerary_id}", response_model=schemas.ItineraryOut)
+def update_itinerary(itinerary_id: str, payload: schemas.ItineraryBase, db: Session = Depends(get_db)):
+    it = db.query(models.Itinerary).filter(models.Itinerary.id == itinerary_id).first()
+    if not it:
+        raise HTTPException(status_code=404, detail="找不到行程")
+
+    # 更新欄位
+    it.title = payload.title
+    it.budget = payload.budget
+    it.travel_time = payload.travel_time # 這裡現在存的是天數
+    it.transport = payload.transport
+        
+    db.commit()
+    db.refresh(it)
+    return it
+
+@router.get("/itinerary/{itinerary_id}", response_model=List[schemas.ExpenseOut])
+def get_itinerary_expenses(itinerary_id: str, db: Session = Depends(get_db)):
+    return db.query(models.Expense).filter(models.Expense.itinerary_id == itinerary_id).all()
+
+@router.get("/itinerary/{itinerary_id}", response_model=List[schemas.ExpenseOut])
+def get_itinerary_expenses(itinerary_id: str, db: Session = Depends(get_db)):
+    # 到資料庫找出所有符合行程 ID 的花費
+    # 並依照時間排序 (最新的在前面)
+    expenses = db.query(models.Expense).filter(
+        models.Expense.itinerary_id == itinerary_id
+    ).order_by(models.Expense.created_at.desc()).all()
+    
+    return expenses

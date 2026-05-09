@@ -6,7 +6,7 @@ from ..database import get_db
 from ..models import Itinerary, User
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(tags=["Collaboration"])
 
 class JoinTripRequest(BaseModel):
     user_id: str

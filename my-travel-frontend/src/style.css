@@ -1,16 +1,21 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* 風格更改成Trip.com  */
+  --primary-color: #3264ff; 
+  --primary-hover: #2050e6;
+  
+  /* 乾淨的背景與文字色 */
+  --bg-color: #f5f7fa; /* 淺灰背景，讓卡片更明顯 */
+  --card-bg: #ffffff;
+  --text-color: #0f294d; /* 深藍偏黑的字體，更有質感 */
+  --text-secondary: #455873;
+  --border-color: #e5e5e5;
+  
+  /* 圓角與陰影 */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 a {
@@ -23,11 +28,10 @@ a:hover {
 }
 
 body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 h1 {
@@ -56,6 +60,22 @@ button:focus-visible {
 
 .card {
   padding: 2em;
+}
+/* 按鈕共用樣式 */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  box-shadow: var(--shadow-sm);
 }
 
 #app {

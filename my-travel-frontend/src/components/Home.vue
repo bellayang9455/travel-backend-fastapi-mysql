@@ -1,10 +1,10 @@
 <script setup>
-// 首頁景點列表
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRouter,useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '../api/axios.js'
+import SpotForm from './SpotForm.vue'
+import ReviewSection from '../components/ReviewSection.vue'; 
 
-// 接收 App.vue 傳來的 user
 const props = defineProps({
   user: Object,
   initialCategory: String
@@ -14,185 +14,144 @@ const router = useRouter();
 
 // 狀態變數
 const spots = ref([])
-const itineraries = ref([]) // 使用者的行程列表
+const itineraries = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
-const sortBy = ref('newest') // 預設排序
-const selectedCategory = ref(props.initialCategory || '全部')//景點分類預設全部
+const sortBy = ref('newest')
+const selectedCategory = ref(props.initialCategory || '全部')
+const searchQuery = ref(route.query.q || '')
 
-// 彈出視窗控制
+// ✨ 新增：景點詳細資訊 Modal 控制邏輯
+const showDetailModal = ref(false)
+const currentDetailSpot = ref(null)
+
+const openDetailModal = (spot) => {
+  currentDetailSpot.value = spot
+  showDetailModal.value = true
+}
+
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  currentDetailSpot.value = null
+}
+
+// 其他 Modal 控制
 const showAddModal = ref(false)
 const selectedSpotId = ref(null)
 const selectedItineraryId = ref('')
+const showEditModal = ref(false)
+const currentEditSpot = ref(null)
 
-// 產生隨機圖片網址
-const getImageUrl = (id) => {
-  // 使用 picsum，id 當種子確保圖片固定
-  return `https://picsum.photos/seed/${id}/400/300`
-}
+const getImageUrl = (id) => `https://picsum.photos/seed/${id}/400/300`
 
-// 計算屬性：取得所有分類
-const allCategories = computed(() => {
-  // 1. 取得所有景點的分類
-  const categories = spots.value.map(s => s.category || '未分類')
-  // 2. 使用 Set 去除重複，並在最前面加上 '全部'
-  return ['全部', ...new Set(categories)]
-})
-
-// 計算屬性：排序邏輯
 const sortedSpots = computed(() => {
   let list = [...spots.value]
-
-  //景點分類篩選
   if (selectedCategory.value !== '全部') {
-    list = list.filter(spot => {
-       const cat = spot.category || '未分類';
-       // 讓 '🛍️ 購物商圈' 也能被 '購物商圈' 找到
-       return cat.includes(selectedCategory.value);
-    })
+    list = list.filter(spot => (spot.category || '未分類').includes(selectedCategory.value))
   }
-
-  if (sortBy.value === 'newest') {
-    // 假設 id 越大越新，反轉陣列
-    return list.reverse() 
-  } else if (sortBy.value === 'oldest') {
-    return list 
-  } else if (sortBy.value === 'name_asc') {
-    return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')) 
+  if (route.query.location) {
+    list = list.filter(spot => spot.region === route.query.location)
   }
+  
+  if (sortBy.value === 'newest') return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  if (sortBy.value === 'oldest') return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  if (sortBy.value === 'name_asc') return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
   return list
 })
 
-// API 方法
+const handleSearch = () => {
+  router.push({ query: { ...route.query, q: searchQuery.value } })
+}
 
-// 1. 抓取景點
-const fetchSpots = async (keyword = '') => {
+const fetchSpots = async (keyword) => {
+  const searchK = (typeof keyword === 'string') ? keyword : (route.query.q || '');
   loading.value = true
-  errorMessage.value = ''
   try {
-    // 帶上 query 參數 q
-    const response = await api.get(`/api/spots`, {
-        params: { q: keyword }
-    })
+    const response = await api.get(`/api/spots`, { params: { q: searchK } })
     spots.value = response.data
     
-    if (spots.value.length === 0) {
-      if (keyword) {
-          errorMessage.value = `🔍 找不到與「${keyword}」相關的景點，試試別的關鍵字？`
-      } else {
-          errorMessage.value = '📭 目前沒有任何景點資料，請點擊右上角新增！'
-      }
+    // 如果 Modal 正在開啟，更新 Modal 內的資料（例如評論數更新時）
+    if (showDetailModal.value && currentDetailSpot.value) {
+      const updatedSpot = spots.value.find(s => s.id === currentDetailSpot.value.id)
+      if (updatedSpot) currentDetailSpot.value = updatedSpot
     }
   } catch (error) {
-    console.error("抓不到資料:", error)
-    if (error.code === 'ERR_NETWORK') {
-      errorMessage.value = '❌ 無法連線到後端！請確認 uvicorn 是否已執行。'
-    } else {
-      errorMessage.value = `❌ 發生錯誤：${error.message}`
-    }
+    errorMessage.value = `❌ 發生錯誤：${error.message}`
   } finally {
     loading.value = false
   }
 }
 
-// 2. 抓取使用者行程 (為了下拉選單)
 const fetchUserItineraries = async () => {
-    if (!props.user) {
-        itineraries.value = [];
-        return;
-    }
+    if (!props.user) return;
     try {
         const res = await api.get(`/api/itineraries/user/${props.user.id}`);
         itineraries.value = res.data;
-    } catch (e) {
-        console.error("載入行程失敗", e);
-    }
+    } catch (e) { console.error(e); }
 };
 
-// 3. 開啟加入視窗
 const openAddModal = (spotId) => {
-    if (!props.user) {
-        alert("請先登入才能加入行程！");
-        return;
-    }
-    if (itineraries.value.length === 0) {
-        alert("您還沒有建立任何行程，請先去「個人頁面」建立一個行程吧！");
-        return;
-    }
+    if (!props.user) return alert("請先登入！");
     selectedSpotId.value = spotId;
-    // 預設選第一個行程
-    if (itineraries.value.length > 0) {
-        selectedItineraryId.value = itineraries.value[0].id; 
-    }
+    if (itineraries.value.length > 0) selectedItineraryId.value = itineraries.value[0].id;
     showAddModal.value = true;
 };
 
-// 4. 送出加入請求
 const addToItinerary = async () => {
-    if (!selectedItineraryId.value) return;
     try {
-        await api.post(`/api/itineraries/${selectedItineraryId.value}/add_spot`, {
-            spot_id: selectedSpotId.value
-        });
+        await api.post(`/api/itineraries/${selectedItineraryId.value}/add_spot`, { spot_id: selectedSpotId.value });
         alert("🎉 成功加入行程！");
         showAddModal.value = false;
-    } catch (e) {
-        console.error(e);
-        alert("加入失敗，請檢查後端連線。");
-    }
+    } catch (e) { alert("加入失敗"); }
 };
 
-// 生命週期與監聽
+const openEditModal = (spot) => {
+  currentEditSpot.value = spot
+  showEditModal.value = true
+}
+
+const handleEditSuccess = () => {
+  showEditModal.value = false
+  fetchSpots()
+}
+
 onMounted(() => {
   fetchSpots(route.query.q || '')
-  
   if (props.user) fetchUserItineraries()
 })
 
-// 監聽網址變化
-watch(
-  () => route.query.q,
-  (newKeyword) => {
-    // 如果搜尋關鍵字變了 (包含變回空字串)，就重新抓取
-    fetchSpots(newKeyword || '')
-    // 搜尋時建議把分類重置為全部，避免使用者以為沒搜到 (可選)
-    selectedCategory.value = '全部' 
-  }
-)
-
-// 監聽 initialCategory 變化
-watch(() => props.initialCategory, (newVal) => {
-    if (newVal) {
-        selectedCategory.value = newVal;
-
-        const matchCount = spots.value.filter(s => s.category === newVal).length;
-        console.log(`資料庫裡分類是「${newVal}」的共有: ${matchCount} 筆`);
-    }
-});
-
-// 監聽 user 變化 (例如剛登入)
+watch(() => route.query.q, (newK) => fetchSpots(newK || ''))
 watch(() => props.user, (newUser) => {
     if (newUser) fetchUserItineraries();
     else itineraries.value = [];
 });
-
-const clearSearch = () => {
-    router.push({ name: 'home' }) // 這會清空網址參數，觸發上面的 watch
-}
 </script>
 
 <template>
-  <div class="spot-container">
+<div class="home-page">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">探索你的下一趟完美旅程</h1>
+        
+      <div class="search-card">
+          <div class="search-tabs">
+            <span class="active">🏖️ 找景點</span>
+          </div>
+          <div class="search-inputs">
+            <input type="text" placeholder="你想去哪裡？ (例如：台北、東京)" v-model="searchQuery" @keyup.enter="handleSearch" />
+            <button class="btn-primary search-btn" @click="handleSearch">搜尋</button>
+          </div>
+        </div>
+      </div>
+    </div>
     
+  <div class="spot-container">
     <div class="header">
       <div class="header-left">
         <h2>🏝️ 熱門景點列表</h2>
-        <span class="category-badge" v-if="selectedCategory !== '全部'">
-          {{ selectedCategory }}
-        </span>
+        <span class="category-badge" v-if="selectedCategory !== '全部'">{{ selectedCategory }}</span>
         <span class="count" v-if="!errorMessage && !loading">共 {{ sortedSpots.length }} 個景點</span>
       </div>
-      
       <div class="header-right" v-if="!loading && !errorMessage">
         <select v-model="sortBy" class="sort-select">
           <option value="newest">🕒 最新建立</option>
@@ -212,59 +171,126 @@ const clearSearch = () => {
     </div>
 
     <div v-else class="grid-layout">
-      <div v-for="spot in sortedSpots" :key="spot.id" class="card">
-        
+      <div 
+        v-for="spot in sortedSpots" 
+        :key="spot.id" 
+        class="spot-card"
+        @click="openDetailModal(spot)"
+      >
         <div class="image-box">
           <img :src="getImageUrl(spot.id)" alt="景點圖片">
           <span class="category-tag">{{ spot.category || '未分類' }}</span>
           <span class="location-tag" v-if="spot.location">📍 {{ spot.location }}</span>
+          
+          <div v-if="(spot.review_count || 0) >= 3" class="img-rating-badge">
+             ★ {{ spot.avg_rating }}
+          </div>
         </div>
 
         <div class="card-body">
           <div class="title-row">
-              <h3>{{ spot.name }}</h3>
+            <h3 class="spot-name">{{ spot.name }}</h3>
+            <div v-if="(spot.review_count || 0) < 3" class="insufficient-badge">人數不足</div>
           </div>
-          
+
           <div class="info-row">
-            <span>🕒 {{ spot.hours || '全天開放' }}</span>
+            <span class="info-item">🕒 {{ spot.hours || '全天開放' }}</span>
+            <span class="dot-separator">•</span>
+            <span class="info-item">💬 {{ spot.review_count || 0 }} 則評論</span>
           </div>
 
           <div class="tags-row">
-            <template v-if="spot.features && spot.features.features">
-              <span v-for="(tag, index) in spot.features.features.slice(0, 3)" :key="index" class="feature-tag">
-                #{{ tag }}
-              </span>
+            <template v-if="spot.features?.features?.length > 0 && spot.features.features[0] !== ''">
+              <span v-for="(tag, index) in spot.features.features.slice(0, 3)" :key="index" class="feature-tag">#{{ tag }}</span>
             </template>
           </div>
 
           <div class="footer">
              <div class="rec-text">
                  <span class="label">推薦：</span>
-                 <span v-if="spot.activities && spot.activities.activities">
-                   {{ spot.activities.activities.slice(0, 2).join('、') }}
-                 </span>
-                 <span v-else>自由探索</span>
+                 <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
              </div>
-             
-             <button @click="openAddModal(spot.id)" class="btn-add-itin" title="加入行程">
-                📅
-             </button>
+             <div class="actions" @click.stop>
+                <button @click="openEditModal(spot)" class="btn-action btn-edit" title="編輯">編輯</button>
+                <button @click="openAddModal(spot.id)" class="btn-action btn-add" title="加入行程">加入</button>
+             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="showAddModal" class="modal-overlay">
+    <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+      <div class="detail-modal-card">
+        <button class="modal-close-btn" @click="closeDetailModal">✕</button>
+        
+        <div class="detail-layout">
+          <div class="detail-info-side">
+            <div class="detail-image-box">
+              <img :src="getImageUrl(currentDetailSpot.id)" alt="景點圖片">
+              <div class="detail-img-overlay">
+                <span class="detail-category">{{ currentDetailSpot.category || '未分類' }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-content">
+              <h2>{{ currentDetailSpot.name }}</h2>
+              <p class="detail-location">📍 {{ currentDetailSpot.location }}</p>
+              
+              <div class="detail-meta">
+                <div class="meta-item">
+                  <span class="icon">🕒</span>
+                  <div class="text">
+                    <strong>營業時間</strong>
+                    <span>{{ currentDetailSpot.hours || '全天開放' }}</span>
+                  </div>
+                </div>
+                <div class="meta-item">
+                  <span class="icon">⭐</span>
+                  <div class="text">
+                    <strong>評價分數</strong>
+                    <span>{{ currentDetailSpot.avg_rating ? `${currentDetailSpot.avg_rating} / 5.0` : '尚無足夠評價' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-tags-section" v-if="currentDetailSpot.features?.features?.length > 0 && currentDetailSpot.features.features[0] !== ''">
+                <h4>特色標籤</h4>
+                <div class="detail-tags">
+                  <span v-for="(tag, index) in currentDetailSpot.features.features" :key="index" class="tag">#{{ tag }}</span>
+                </div>
+              </div>
+
+              <div class="detail-tags-section" v-if="currentDetailSpot.activities?.activities?.length > 0 && currentDetailSpot.activities.activities[0] !== ''">
+                <h4>推薦活動</h4>
+                <div class="detail-tags">
+                  <span v-for="(act, index) in currentDetailSpot.activities.activities" :key="index" class="act-tag">{{ act }}</span>
+                </div>
+              </div>
+
+              <div class="detail-actions">
+                <button @click="openEditModal(currentDetailSpot)" class="btn-action btn-edit">✏️ 編輯資訊</button>
+                <button @click="openAddModal(currentDetailSpot.id)" class="btn-action btn-add">📅 加入我的行程</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-review-side">
+             <ReviewSection 
+              :spotId="currentDetailSpot.id" 
+              :user="props.user" 
+              @submitSuccess="fetchSpots"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
       <div class="modal-content">
         <h3>選擇要加入的行程</h3>
-        <p>請選擇您想將此景點加入哪一個行程表：</p>
-        
         <select v-model="selectedItineraryId" class="modal-select">
-            <option v-for="itin in itineraries" :key="itin.id" :value="itin.id">
-                {{ itin.title }}
-            </option>
+            <option v-for="itin in itineraries" :key="itin.id" :value="itin.id">{{ itin.title }}</option>
         </select>
-
         <div class="modal-actions">
             <button @click="addToItinerary" class="btn-confirm">確定加入</button>
             <button @click="showAddModal = false" class="btn-cancel">取消</button>
@@ -272,63 +298,323 @@ const clearSearch = () => {
       </div>
     </div>
 
+    <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
+      <div class="modal-inner">
+         <SpotForm :spotToEdit="currentEditSpot" @submitSuccess="handleEditSuccess" @cancel="showEditModal = false" />
+      </div>
+    </div>
   </div>
+</div>
 </template>
 
 <style scoped>
-/* 保留您原本的所有樣式 */
-.spot-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color, #eee); padding-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-.header-left h2 { margin: 0; color: var(--text-color, #333); display: inline-block; margin-right: 10px;}
-.count { color: var(--text-secondary, #666); font-size: 0.9rem; }
-.sort-select { padding: 8px 12px; border-radius: 20px; border: 1px solid var(--input-border, #ddd); background-color: var(--card-bg, #fff); color: var(--text-color, #333); font-size: 0.9rem; cursor: pointer; outline: none; }
-.state-box { text-align: center; padding: 40px; background-color: var(--card-bg, #fff); border-radius: 12px; border: 1px solid var(--border-color, #eee); margin-top: 20px; }
-.loading { color: var(--text-secondary, #666); font-size: 1.2rem; }
-.spinner { display: inline-block; animation: spin 2s linear infinite; margin-right: 10px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.error { color: #e74c3c; background-color: #fff2f0; border-color: #ffccc7; }
-.retry-btn { margin-top: 15px; padding: 8px 16px; background-color: var(--primary-color, #4CAF50); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
-.grid-layout { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-@media (max-width: 1024px) { .grid-layout { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .grid-layout { grid-template-columns: repeat(1, 1fr); } }
-.category-badge {
-  background-color: var(--primary-color);
+.spot-container { 
+  --gap: 20px;
+  padding: 20px; 
+  max-width: 1300px; 
+  margin: 0 auto; 
+}
+
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 1150px) { .grid-layout { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 850px) { .grid-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 550px) { .grid-layout { grid-template-columns: 1fr; } }
+
+/* 基本景點卡片樣式 */
+.spot-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 400px; /* 固定高度讓網格整齊 */
+}
+
+.spot-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.image-box { position: relative; height: 180px; flex-shrink: 0; overflow: hidden; }
+.image-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;}
+.spot-card:hover .image-box img { transform: scale(1.05); }
+
+.img-rating-badge {
+  position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.95);
+  color: #856404; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 20px;
+}
+
+.category-tag { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); color: var(--primary-color); font-size: 10px; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+.location-tag { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px 8px; border-radius: 4px; }
+
+.card-body { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
+.title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 5px; }
+.spot-name { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-color); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.insufficient-badge { font-size: 10px; color: var(--text-secondary); background: var(--input-bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; }
+
+.info-row { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; }
+.dot-separator { margin: 0 8px; color: #ccc; }
+
+.tags-row { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; height: 24px; overflow: hidden; }
+.feature-tag { background: var(--input-bg); color: var(--primary-color); border: 1px solid var(--border-color); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
+
+.footer { 
+  margin-top: auto; 
+  border-top: 1px solid var(--border-color); 
+  padding-top: 15px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+
+.rec-text { 
+  font-size: 0.8rem; color: var(--text-secondary); flex: 1; margin-right: 10px; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;
+}
+.label { font-weight: bold; }
+.rec-content { color: var(--text-color); }
+
+/* --- 現代化長條按鈕 --- */
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn-action {
+  padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 0.85rem; font-weight: bold; transition: all 0.2s ease; letter-spacing: 1px;
+}
+.btn-action.btn-edit { background-color: var(--input-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.btn-action.btn-edit:hover { color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(50, 100, 255, 0.05); }
+.btn-action.btn-add { background-color: var(--primary-color); color: white; }
+.btn-action.btn-add:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(50, 100, 255, 0.3); }
+
+/* ✨ 詳細資訊 Modal 專屬樣式 ✨ */
+.detail-modal-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 85vh;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  animation: modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0,0,0,0.5);
   color: white;
-  padding: 4px 10px;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close-btn:hover { background: var(--primary-color); }
+
+.detail-layout {
+  display: flex;
+  height: 85vh;
+}
+
+/* 左側：詳細資訊 */
+.detail-info-side {
+  flex: 6;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.detail-image-box {
+  width: 100%;
+  height: 300px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.detail-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-img-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  align-items: flex-end;
+}
+
+.detail-category {
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: bold;
-  margin-right: 10px;
-  display: inline-block;
 }
-/* 卡片與內容 */
-.card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #eee); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px var(--shadow-color, rgba(0,0,0,0.05)); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; display: flex; flex-direction: column; }
-.card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px var(--shadow-color, rgba(0,0,0,0.1)); }
-.image-box { position: relative; height: 160px; overflow: hidden; }
-.image-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
-.card:hover .image-box img { transform: scale(1.1); }
-.category-tag { position: absolute; top: 10px; left: 10px; background: rgba(255, 255, 255, 0.9); color: var(--primary-color, #4CAF50); font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 20px; }
-.location-tag { position: absolute; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); color: white; font-size: 12px; padding: 4px 8px; border-radius: 4px; }
-.card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
-.card-body h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--text-color, #333); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.info-row { font-size: 12px; color: var(--text-secondary, #666); margin-bottom: 10px; }
-.tags-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
-.feature-tag { background: var(--input-bg, #f9f9f9); color: var(--primary-color, #4CAF50); border: 1px solid var(--border-color, #eee); font-size: 11px; padding: 2px 6px; border-radius: 4px; }
 
-/* Footer 修改：讓按鈕與文字並排 */
-.footer { margin-top: auto; border-top: 1px solid var(--border-color, #eee); padding-top: 10px; font-size: 12px; color: var(--text-secondary, #666); display: flex; justify-content: space-between; align-items: center; }
-.rec-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.label { font-weight: bold; color: var(--text-color, #333); }
+.detail-content {
+  padding: 30px;
+}
 
-/* ⭐ 新增：加入行程按鈕樣式 */
-.btn-add-itin { background-color: var(--primary-color, #4CAF50); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-.btn-add-itin:hover { background-color: #45a049; transform: scale(1.1); }
+.detail-content h2 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  color: var(--text-color);
+}
 
-/* ⭐ 新增：Modal 樣式 */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-.modal-content { background: var(--card-bg, white); padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); color: var(--text-color, #333); }
-.modal-select { width: 100%; padding: 10px; margin: 20px 0; border-radius: 6px; border: 1px solid var(--border-color, #ccc); font-size: 1rem; background: var(--input-bg, #fff); color: var(--text-color, #333); }
+.detail-location {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 25px;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background: var(--input-bg);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid var(--border-color);
+}
+
+.meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.meta-item .icon {
+  font-size: 1.5rem;
+}
+
+.meta-item .text strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.meta-item .text span {
+  font-size: 1.05rem;
+  color: var(--text-color);
+  font-weight: bold;
+}
+
+.detail-tags-section {
+  margin-bottom: 25px;
+}
+
+.detail-tags-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-tags .tag {
+  background: rgba(50, 100, 255, 0.1);
+  color: var(--primary-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.detail-tags .act-tag {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 25px;
+}
+
+.detail-actions .btn-action {
+  flex: 1;
+  padding: 12px;
+  font-size: 1rem;
+}
+
+/* 右側：評論區塊 */
+.detail-review-side {
+  flex: 4;
+  border-left: 1px solid var(--border-color);
+  background: var(--input-bg);
+  overflow-y: auto;
+}
+
+@media (max-width: 850px) {
+  .detail-layout {
+    flex-direction: column;
+  }
+  .detail-review-side {
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    min-height: 400px;
+  }
+  .detail-image-box {
+    height: 200px;
+  }
+}
+
+/* 其他既有樣式保留 */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px);}
+.modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.modal-select { width: 100%; padding: 10px; margin: 20px 0; border-radius: 6px; border: 1px solid #ddd; }
 .modal-actions { display: flex; gap: 10px; justify-content: center; }
-.btn-confirm { background: #2ecc71; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-.btn-cancel { background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.btn-confirm { background: #2ecc71; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+.btn-cancel { background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
+.modal-inner { width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; background: var(--card-bg); border-radius: 16px; }
+
+.hero-section { position: relative; background-image: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; height: 400px; display: flex; align-items: center; justify-content: center; margin-bottom: 60px; border-radius: 10px; }
+.hero-title { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 2.5rem; text-align: center; margin-bottom: 20px; }
+.search-card { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 20px; width: 100%; max-width: 800px; position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); }
+.search-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+.search-tabs span { font-weight: bold; cursor: pointer; color: var(--text-secondary); }
+.search-tabs span.active { color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 11px; }
+.search-inputs { display: flex; gap: 10px; }
+.search-inputs input { flex: 1; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; }
+.search-btn { width: 120px; font-size: 1.1rem; }
 </style>

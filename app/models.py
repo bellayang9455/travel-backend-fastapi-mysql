@@ -94,7 +94,6 @@ class ItinerarySpot(Base):
     itinerary: Mapped["Itinerary"] = relationship(back_populates="spots")
     spot: Mapped["Spot"] = relationship(back_populates="in_plans")
 
-
 class Review(Base):
     __tablename__ = "reviews"
 
@@ -108,7 +107,6 @@ class Review(Base):
 
     user: Mapped["User"] = relationship(back_populates="reviews")
     spot: Mapped["Spot"] = relationship(back_populates="reviews")
-
 
 class TravelRecord(Base):
     __tablename__ = "travel_records"
@@ -125,3 +123,25 @@ class TravelRecord(Base):
 
     user: Mapped["User"] = relationship(back_populates="travel_records")
     itinerary: Mapped["Itinerary"] = relationship(back_populates="travel_records")
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id = Column(String(50), primary_key=True, index=True)
+    
+    # 關聯
+    itinerary_id = Column(String(50), ForeignKey("itineraries.id"), nullable=False)
+    payer_id = Column(String(50), ForeignKey("users.id"), nullable=False)
+    
+    # 基本花費資訊
+    description = Column(String(255), nullable=False) 
+    amount = Column(Float, nullable=False)
+    currency = Column(String(10), default="TWD")
+    
+    # 核心分帳資料
+    split_details = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    itinerary = relationship("Itinerary", backref="expenses")
+    payer = relationship("User", foreign_keys=[payer_id])

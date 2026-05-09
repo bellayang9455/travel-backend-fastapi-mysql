@@ -12,7 +12,7 @@ from ..models import Spot
 from ..database import get_db
 from ..config import settings
 
-router = APIRouter()
+router = APIRouter(tags=["AI Planner"])
 
 # 👇 你的 API KEY
 GENAI_API_KEY = settings.gemini_api_key
