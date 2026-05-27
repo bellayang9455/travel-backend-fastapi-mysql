@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     cors_origins: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "https://my-travel-frontend-phi.vercel.app"
     ]
 
     app_host: str = "0.0.0.0"
