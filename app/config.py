@@ -17,7 +17,8 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://my-travel-frontend-phi.vercel.app",
-        "https://my-travel-frontend-git-feature-xin-newwork-yyy-s-projects.vercel.app"
+        "https://my-travel-frontend-git-feature-xin-newwork-yyy-s-projects.vercel.app",
+        "https://my-travel-frontend-8vlirsi75-yyy-s-projects.vercel.app"
     ]
 
     app_host: str = "0.0.0.0"
