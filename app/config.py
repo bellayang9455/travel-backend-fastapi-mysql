@@ -4,10 +4,8 @@ import google.generativeai as genai
 
 
 class Settings(BaseSettings):
-    # Render / Railway 用
     database_url: str | None = None
 
-    # 本地開發用
     mysql_user: str = "travel"
     mysql_password: str = "travel"
     mysql_host: str = "localhost"
@@ -18,27 +16,27 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://my-travel-frontend-phi.vercel.app"
+
+        "https://my-travel-frontend-eileb6t82-yyy-s-projects.vercel.app",
+        "https://my-travel-frontend-phi.vercel.app",
+        "https://my-travel-frontend-git-feature-xin-newwork-yyy-s-projects.vercel.app",
+        "https://my-travel-frontend-8vlirsi75-yyy-s-projects.vercel.app",
     ]
 
     app_host: str = "0.0.0.0"
     app_port: int = 8000
 
-    # Gemini API
     gemini_api_key: str = ""
 
-    # JWT
     secret_key: str = "my_super_secret_key_123"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
     @property
     def final_database_url(self) -> str:
-        # Render 有 DATABASE_URL 時優先使用
         if self.database_url:
             return self.database_url
 
-        # 本地 fallback
         return (
             f"mysql+pymysql://{self.mysql_user}:{self.mysql_password}"
             f"@{self.mysql_host}:{self.mysql_port}/{self.mysql_db}"
@@ -52,6 +50,5 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Gemini 初始化
 if settings.gemini_api_key:
     genai.configure(api_key=settings.gemini_api_key)

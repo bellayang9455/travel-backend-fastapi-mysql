@@ -48,7 +48,7 @@ const checkName = async (name) => {
   try {
     isChecking.value = true
     // 呼叫後端我們剛剛寫好的 check_name API
-    const res = await api.get(`/api/spots/check_name`, {
+    const res = await api.get(`/api/spots/check_name/`, {
       params: { name }
     })
     
@@ -128,11 +128,11 @@ const submitData = async () => {
     // 判斷是新增還是編輯
     if (props.spotToEdit) {
       // 編輯模式：打 PUT API (記得帶上 id)
-      await api.put(`/api/spots/${props.spotToEdit.id}`, payload)
+      await api.put(`/api/spots/${props.spotToEdit.id}/`, payload)
       alert('✏️ 更新成功！')
     } else {
       // 新增模式：打 POST API
-      await api.post('/api/spots', payload)
+      await api.post('/api/spots/', payload)
       alert('🎉 新增成功！')
     }
     

@@ -4,6 +4,8 @@ from .config import settings
 from .database import Base, engine, SessionLocal
 from .seed_data import seed
 from .routers import health, spots, itineraries, reviews, travel_records, users, auth, ai_plan, collab, expenses
+from fastapi.responses import Response
+
 
 # 建表
 Base.metadata.create_all(bind=engine)
@@ -14,6 +16,21 @@ with SessionLocal() as db:
 
 app = FastAPI(title="Travel Backend (FastAPI + MySQL)")
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://my-travel-frontend-eileb6t82-yyy-s-projects.vercel.app",
+        "https://my-travel-frontend-phi.vercel.app",
+        "https://my-travel-frontend-git-feature-xin-newwork-yyy-s-projects.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 加上這段，讓根目錄 / 有東西可以回傳
 @app.get("/")
 def read_root():
@@ -21,11 +38,23 @@ def read_root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.options("/{full_path:path}")
+async def preflight_handler(request: Request, full_path: str):
+    origin = request.headers.get("origin", "*")
+
+    response = Response(status_code=200)
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 # routers
 app.include_router(health.router,prefix="/api/health")
