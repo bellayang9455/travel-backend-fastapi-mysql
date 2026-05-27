@@ -102,13 +102,21 @@ const handleRegister = async () => {
     alert(`🎉 註冊成功！歡迎 ${user_name} 加入！`);
     emit('registerSuccess', userData);
     
-  } catch (error) {
-    if (error.response && error.response.data && error.response.data.detail) {
-      alert('❌ 註冊失敗：' + error.response.data.detail);
-    } else {
-      alert('❌ 註冊失敗，請確認後端是否啟動');
-    }
-  } finally {
+  } } catch (error) {
+
+  console.log(error.response.data);
+
+  if (error.response && error.response.data && error.response.data.detail) {
+
+    alert(
+      '❌ 註冊失敗：\n' +
+      JSON.stringify(error.response.data, null, 2)
+    );
+
+  } else {
+    alert('❌ 註冊失敗，請確認後端是否啟動');
+  }
+} finally {
     isLoading.value = false;
   }
 };
