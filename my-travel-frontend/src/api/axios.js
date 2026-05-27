@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // 1. 建立一個專用的 api 實例
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000', // 後端的網址
+  baseURL: 'https://travel-backend-fastapi-13vi.onrender.com', // 後端的網址
   timeout: 200000, // 可選的請求超時設定
   headers: {
     'Content-Type': 'application/json',
