@@ -29,7 +29,7 @@ app.add_middleware(
 
 # routers
 app.include_router(health.router,prefix="/api/health")
-app.include_router(spots.router,prefix="/api/spots")
+app.include_router(spots.router,prefix="/api/spots/")
 app.include_router(itineraries.router, prefix="/api/itineraries")
 app.include_router(reviews.router, prefix="/api/reviews")
 app.include_router(travel_records.router, prefix="/api/travel-records")

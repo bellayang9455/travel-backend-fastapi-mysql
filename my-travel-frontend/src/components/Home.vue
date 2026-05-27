@@ -63,7 +63,7 @@ const fetchSpots = async (keyword) => {
   const searchK = (typeof keyword === 'string') ? keyword : (route.query.q || '');
   loading.value = true
   try {
-    const response = await api.get(`/api/spots`, { params: { q: searchK } })
+    const response = await api.get(`/api/spots/`, { params: { q: searchK } })
     spots.value = response.data
     if (showDetailModal.value && currentDetailSpot.value) {
       const updatedSpot = spots.value.find(s => s.id === currentDetailSpot.value.id)

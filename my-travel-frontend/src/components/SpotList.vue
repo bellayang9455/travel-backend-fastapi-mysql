@@ -59,7 +59,7 @@ const fetchSpots = async () => {
   
   try {
     // 假設後端 spots 路由前綴是 /api
-    const response = await api.get('/api/spots')
+    const response = await api.get('/api/spots/')
     spots.value = response.data
     
     if (spots.value.length === 0) {

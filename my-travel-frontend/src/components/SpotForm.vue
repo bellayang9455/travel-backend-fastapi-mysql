@@ -132,7 +132,7 @@ const submitData = async () => {
       alert('✏️ 更新成功！')
     } else {
       // 新增模式：打 POST API
-      await api.post('/api/spots', payload)
+      await api.post('/api/spots/', payload)
       alert('🎉 新增成功！')
     }
     
