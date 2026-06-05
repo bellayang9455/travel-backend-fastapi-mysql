@@ -5,6 +5,24 @@ import api from '../api/axios.js'
 import SpotForm from './SpotForm.vue'
 import ReviewSection from '../components/ReviewSection.vue'; 
 
+// Lucide圖示
+import { 
+  Compass, 
+  Clock, 
+  MessageSquare, 
+  MapPin, 
+  Edit3, 
+  Calendar, 
+  ChevronDown, 
+  RefreshCw, 
+  Loader2,
+  AlertTriangle,
+  Award,
+  TreePalm,
+  Search
+} from 'lucide-vue-next'
+
+// 變數與函式定義
 const props = defineProps({
   user: Object,
   initialCategory: String
@@ -128,7 +146,9 @@ watch(() => props.user, (newUser) => {
       <h1 class="hero-title">探索你的下一趟完美旅程</h1>
       <div class="search-card">
         <div class="search-tabs">
-          <span class="active">🏖️ 找景點</span>
+          <span class="active" >
+            <Search :size="18" class="icon-inline" />找景點
+          </span>
         </div>
         <div class="search-inputs">
           <input type="text" placeholder="你想去哪裡？ (例如：台北、東京)" v-model="searchQuery" @keyup.enter="handleSearch" />
@@ -141,7 +161,7 @@ watch(() => props.user, (newUser) => {
   <div class="spot-container">
     <div class="header">
       <div class="header-left">
-        <h2>🏝️ 熱門景點列表</h2>
+        <h2><TreePalm  :size="24" />   熱門景點列表</h2>
         <span class="category-badge" v-if="selectedCategory !== '全部'">{{ selectedCategory }}</span>
         <span class="count" v-if="!errorMessage && !loading">共 {{ sortedSpots.length }} 個景點</span>
       </div>
@@ -294,6 +314,11 @@ watch(() => props.user, (newUser) => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');
+
+body {
+  font-family: your-current-font, 'Noto Color Emoji', sans-serif;
+}
 .spot-container { --gap: 20px; padding: 20px; max-width: 1300px; margin: 0 auto; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
 .grid-layout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
@@ -327,7 +352,16 @@ watch(() => props.user, (newUser) => {
 .btn-action.btn-edit:hover { color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(50, 100, 255, 0.05); }
 .btn-action.btn-add { background-color: var(--primary-color); color: white; }
 .btn-action.btn-add:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(50, 100, 255, 0.3); }
-
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-radius: var(--radius-md);
+    padding: 8px 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all .3s ease;
+}
 .detail-modal-card { background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 1000px; max-height: 85vh; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 @keyframes modalScaleIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 .modal-close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }

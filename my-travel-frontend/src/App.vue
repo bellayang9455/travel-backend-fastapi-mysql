@@ -184,6 +184,8 @@ watch(isDarkMode, (newVal) => {
   --shadow-color: rgba(0,0,0,0.05);
   --primary-color: #4CAF50;
   --link-color: #333;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
 .dark-mode {
@@ -250,7 +252,7 @@ body {
   font-size: 1rem;
 }
 
-/* 👇 新增：彈窗 Modal 的 CSS 👇 */
+/*  新增：彈窗 Modal 的 CSS  */
 .modal-overlay {
   position: fixed;
   top: 0;
