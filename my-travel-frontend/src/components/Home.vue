@@ -121,6 +121,10 @@ const handleSelectCategory = (categoryName) => {
   switchPage('home') // 切換分類時，確保跳回首頁看結果
 }
 
+watch(() => props.initialCategory, (newVal) => {
+  selectedCategory.value = newVal || '全部'
+})
+
 // ✨ Toast 提示系統 (取代 alert)
 const toastMessage = ref('')
 const showToast = (msg) => {
