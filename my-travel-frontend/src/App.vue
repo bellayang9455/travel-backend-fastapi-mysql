@@ -51,8 +51,9 @@ const switchPage = (pageName) => {
 }
 
 const handleSelectCategory = (categoryName) => {
+  console.log(`[App.vue] 📥 收到分類切換請求 - 準備切換為: ${categoryName}`)// 接收console
   currentCategory.value = categoryName
-  switchPage('home')
+  router.push({ path: '/' }) // 切換分類時，確保跳回首頁看結果
 }
 
 const handleFilterLocation = (locationValue) => {

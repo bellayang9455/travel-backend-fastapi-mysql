@@ -137,6 +137,12 @@ watch(() => props.user, (newUser) => {
     if (newUser) fetchUserItineraries();
     else itineraries.value = [];
 });
+
+// 監聽外層傳來的分類變化
+watch(() => props.initialCategory, (newCat) => {
+  console.log(`[SpotList.vue] 🔄 偵測到外層分類 Props 變更為: ${newCat}`)
+  selectedCategory.value = newCat || '全部'
+})
 </script>
 
 <template>

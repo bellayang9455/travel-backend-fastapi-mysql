@@ -48,6 +48,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkWindowSize)
 })
 
+// 加入多人行程
 const handleJoinTrip = async () => {
   if (!inviteCode.value) return alert('請輸入邀請碼')
   if (!props.userId) {
@@ -126,9 +127,13 @@ const handleMenuClick = (pageName) => {
 } 
 
 const handleFilterClick = (type, value) => {
+  console.log(`[Navbar] 🎯 點擊篩選 - 類型: ${type}, 傳遞的值: ${value}`)
+
   if (type === 'location') emit('filterLocation', value)
   if (type === 'category') emit('selectCategory', value)
-  if (window.innerWidth <= 992) isSidebarOpen.value = false
+  
+  //emit('changePage', 'home') // 切回首頁看結果
+  isSidebarOpen.value = false // 關閉側邊欄
 }
 </script>
 

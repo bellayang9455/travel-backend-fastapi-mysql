@@ -36,7 +36,6 @@ const itineraries = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
 const sortBy = ref('newest')
-const currentCategory = ref('全部')
 const selectedCategory = ref(props.initialCategory || '全部')
 const searchQuery = ref(route.query.q || '')
 
@@ -116,11 +115,6 @@ const fetchUserItineraries = async () => {
   } catch (e) { console.error(e); }
 };
 
-const handleSelectCategory = (categoryName) => {
-  currentCategory.value = categoryName
-  switchPage('home') // 切換分類時，確保跳回首頁看結果
-}
-
 watch(() => props.initialCategory, (newVal) => {
   selectedCategory.value = newVal || '全部'
 })
@@ -167,6 +161,16 @@ watch(() => props.user, (newUser) => {
   if (newUser) fetchUserItineraries();
   else itineraries.value = [];
 });
+
+watch(() => props.initialCategory, (newCategory) => {
+  console.log(`[Home.vue] 🔄 偵測到外層分類 Props 變更為: ${newCategory}`)
+  selectedCategory.value = newCategory || '全部'
+})
+
+// 也可以加一個監聽確認 selectedCategory 真的有改動
+watch(selectedCategory, (newVal) => {
+  console.log(`[Home.vue] ✅ 目前畫面實際套用的分類變數: ${newVal}`)
+})
 </script>
 
 <template>
