@@ -36,6 +36,7 @@ const itineraries = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
 const sortBy = ref('newest')
+const currentCategory = ref('全部')
 const selectedCategory = ref(props.initialCategory || '全部')
 const searchQuery = ref(route.query.q || '')
 
@@ -61,12 +62,13 @@ const currentEditSpot = ref(null)
 // ✨ 動態莫蘭迪質感漸層背景渲染 (取代 getImageUrl)
 const getBgStyle = (category) => {
   const gradients = {
-    '森林生態': 'linear-gradient(135deg, #115e59 0%, #042f2e 100%)', // 暮色深森綠
-    '自然景觀': 'linear-gradient(135deg, #9a3412 0%, #431407 100%)', // 暖岩焦橙
+    '自然景觀': 'linear-gradient(135deg, #115e59 0%, #042f2e 100%)', // 暮色深森綠
+    '網美打卡': 'linear-gradient(135deg, #9a3412 0%, #431407 100%)', // 暖岩焦橙
     '在地美食': 'linear-gradient(135deg, #991b1b 0%, #450a0a 100%)', // 勃根地酒紅
     '歷史人文': 'linear-gradient(135deg, #1e40af 0%, #172554 100%)', // 皇家午夜藍
-    '自然生態': 'linear-gradient(135deg, #065f46 0%, #064e3b 100%)', // 深夜翡翠
-    '文創景觀': 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)', // 曜石魔幻紫
+    '休閒娛樂': 'linear-gradient(135deg, #065f46 0%, #064e3b 100%)', // 深夜翡翠
+    '購物商圈': 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)', // 曜石魔幻紫
+    '其他': 'linear-gradient(135deg, #78716c 0%, #0f172a 100%)' // 莫蘭迪石板灰
   }
   return { background: gradients[category] || 'linear-gradient(135deg, #334155 0%, #0f172a 100%)' }; // 預設深灰
 }
@@ -113,6 +115,11 @@ const fetchUserItineraries = async () => {
     itineraries.value = res.data;
   } catch (e) { console.error(e); }
 };
+
+const handleSelectCategory = (categoryName) => {
+  currentCategory.value = categoryName
+  switchPage('home') // 切換分類時，確保跳回首頁看結果
+}
 
 // ✨ Toast 提示系統 (取代 alert)
 const toastMessage = ref('')
@@ -271,7 +278,7 @@ watch(() => props.user, (newUser) => {
             <div class="rec-text">
               <!--  推薦活動前置加上 Award 專業獎章圖示 -->
               <span class="label">
-                <Award :size="14" class="icon-inline text-primary" /> 推薦：
+                💡 推薦：
               </span>
               <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
             </div>
@@ -425,7 +432,7 @@ body {
 
 /* ✨ SVG 向量圖示微調對齊，徹底搞定「飄浮」 */
 .icon-inline {
-  display: inline-flex;
+  display: inline-block;
   align-self: center;
   vertical-align: middle;
   margin-right: 4px;
@@ -497,37 +504,18 @@ body {
 .feature-tag { background: var(--input-bg); color: var(--primary-color); border: 1px solid var(--border-color); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
 
 /* ✨ 底部資訊與推薦活動：強制設定固定高度來解決橫線高低不同的問題 */
-.footer { 
-  margin-top: auto; 
-  border-top: 1px solid var(--border-color); 
-  padding-top: 12px; 
-  height: 60px; /* ✨ 給予絕對固定高度，確保所有卡片的橫線完美水平對齊 */
-  box-sizing: border-box;
-  display: flex; 
-  align-items: flex-start; 
-}
 
-.rec-text { 
-  font-size: 0.8rem; 
-  color: var(--text-secondary); 
-  width: 100%; /* ✨ 放滿寬度，因為已經移除按鈕了 */
-  line-height: 1.4; 
-  display: -webkit-box; 
-  -webkit-line-clamp: 2; 
-  -webkit-box-orient: vertical; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
-}
-
-.label { font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+.footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+.rec-text { font-size: 0.8rem; color: var(--text-secondary); flex: 1; margin-right: 10px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+.label { font-weight: bold; display: inline-block; align-items: center; gap: 3px; }
 .rec-content { color: var(--text-color); }
 
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
 .btn-action { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.2s ease; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 4px; }
 .btn-action.btn-edit { background-color: var(--input-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
 .btn-action.btn-edit:hover { color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(50, 100, 255, 0.05); }
 .btn-action.btn-add { background-color: var(--primary-color); color: white; }
 .btn-action.btn-add:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(50, 100, 255, 0.3); }
-
 .btn-primary {
     background-color: var(--primary-color);
     color: #fff;
