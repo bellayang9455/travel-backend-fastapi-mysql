@@ -23,7 +23,11 @@ const isSaving = ref(false)
 // 呼叫 AI 生成行程
 const generatePlan = async () => {
   if (!form.value.destination) return alert('請輸入地點！')
+
+  if (form.value.days && form.value.days > 14) {
+    return alert('⚠️ 為了確保 AI 規劃品質與避免系統超時，單次行程最多支援 14 天喔！長途旅行建議您分拆成多次規劃。')
   
+  }
   isLoading.value = true
   generatedItinerary.value = [] 
   
@@ -36,7 +40,12 @@ const generatePlan = async () => {
     generatedItinerary.value = response.data.result
   } catch (error) {
     console.error(error)
-    alert('AI 發生錯誤，請稍後再試')
+    if (error.code === 'ECONNABORTED') {
+      alert('⏳ AI 思考時間過長！請稍後再試，或嘗試減少規劃天數。')
+    } else {
+      const msg = error.response?.data?.detail || 'AI 發生錯誤，請稍後再試'
+      alert(`❌ ${msg}`)
+    }
   } finally {
     isLoading.value = false
   }
