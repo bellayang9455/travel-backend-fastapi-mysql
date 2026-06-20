@@ -131,10 +131,14 @@ const handleEditSuccess = () => {
 
 onMounted(() => {
   fetchSpots(route.query.q || '')
+  searchQuery.value = route.query.q || ''
   if (props.user) fetchUserItineraries()
 })
 
-watch(() => route.query.q, (newK) => fetchSpots(newK || ''))
+watch(() => route.query.q, (newK) => {
+  fetchSpots(newK || '')
+  searchQuery.value = newK || ''
+})
 watch(() => props.user, (newUser) => {
   if (newUser) fetchUserItineraries();
   else itineraries.value = [];
