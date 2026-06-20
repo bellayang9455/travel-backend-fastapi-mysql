@@ -55,19 +55,17 @@ def check_name_exists(name: str, db: Session = Depends(get_db)):
     if not name or len(name.strip()) < 1:
         return {"exists": False, "similar_names": []}
 
-    # 用 ilike (Case-insensitive LIKE) 做模糊搜尋
-    # 限制只回傳前 5 筆，避免因為輸入 "台" 就回傳幾百筆
+    # 用 like 支援中文的模糊搜尋
     similar_spots = db.query(models.Spot)\
-        .filter(models.Spot.name.ilike(f"%{name}%"))\
+        .filter(models.Spot.name.like(f"%{name}%"))\
         .limit(5)\
         .all()
     
-    # 回傳找到的名稱列表，讓前端顯示給使用者看
     return {
         "exists": len(similar_spots) > 0,
         "similar_names": [s.name for s in similar_spots]
     }
-
+    
 @router.post("/", response_model=schemas.SpotOut, status_code=201)
 def create_spot(payload: schemas.SpotCreate, db: Session = Depends(get_db)):
     # 1. 先檢查有沒有重複的景點名稱
