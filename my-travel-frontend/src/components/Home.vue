@@ -79,6 +79,7 @@ const sortedSpots = computed(() => {
 })
 
 const handleSearch = () => {
+  console.log('🔵 handleSearch 觸發，searchQuery:', searchQuery.value)
   router.push({ query: { ...route.query, q: searchQuery.value } })
 }
 
@@ -146,6 +147,7 @@ onMounted(() => {
 })
 
 watch(() => route.query.q, (newK) => {
+  console.log('🟣 watch route.query.q 觸發:', newK)
   fetchSpots(newK || '')
   searchQuery.value = newK || ''
 })
