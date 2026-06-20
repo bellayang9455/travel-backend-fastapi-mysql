@@ -5,24 +5,6 @@ import api from '../api/axios.js'
 import SpotForm from './SpotForm.vue'
 import ReviewSection from '../components/ReviewSection.vue'; 
 
-// ✨ 引入高質感 Lucide 向量圖標 (新增 Star)
-import { 
-  Compass, 
-  Clock, 
-  MessageSquare, 
-  MapPin, 
-  Edit3, 
-  Calendar, 
-  ChevronDown, 
-  RefreshCw, 
-  Loader2,
-  AlertTriangle,
-  Award,
-  TreePalm,
-  Search,
-  Star
-} from 'lucide-vue-next'
-
 // 變數與函式定義
 const props = defineProps({
   user: Object,
@@ -58,16 +40,16 @@ const selectedItineraryId = ref('')
 const showEditModal = ref(false)
 const currentEditSpot = ref(null)
 
-// ✨ 動態莫蘭迪質感漸層背景渲染 (取代 getImageUrl)
+// ✨ 動態莫蘭迪質感漸層背景渲染 (對應 Navbar 的七大類別)
 const getBgStyle = (category) => {
   const gradients = {
-    '自然景觀': 'linear-gradient(135deg, #115e59 0%, #042f2e 100%)', // 暮色深森綠
-    '網美打卡': 'linear-gradient(135deg, #9a3412 0%, #431407 100%)', // 暖岩焦橙
-    '在地美食': 'linear-gradient(135deg, #991b1b 0%, #450a0a 100%)', // 勃根地酒紅
+    '自然生態': 'linear-gradient(135deg, #065f46 0%, #064e3b 100%)', // 深夜翡翠
     '歷史人文': 'linear-gradient(135deg, #1e40af 0%, #172554 100%)', // 皇家午夜藍
-    '休閒娛樂': 'linear-gradient(135deg, #065f46 0%, #064e3b 100%)', // 深夜翡翠
-    '購物商圈': 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)', // 曜石魔幻紫
-    '其他': 'linear-gradient(135deg, #78716c 0%, #0f172a 100%)' // 莫蘭迪石板灰
+    '在地美食': 'linear-gradient(135deg, #991b1b 0%, #450a0a 100%)', // 勃根地酒紅
+    '休閒娛樂': 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', // 湖水湛藍
+    '購物商圈': 'linear-gradient(135deg, #c026d3 0%, #86198f 100%)', // 霓虹紫羅蘭
+    '網美打卡': 'linear-gradient(135deg, #be123c 0%, #881337 100%)', // 玫瑰胭脂
+    '其他': 'linear-gradient(135deg, #475569 0%, #1e293b 100%)',     // 曜石板灰
   }
   return { background: gradients[category] || 'linear-gradient(135deg, #334155 0%, #0f172a 100%)' }; // 預設深灰
 }
@@ -115,11 +97,7 @@ const fetchUserItineraries = async () => {
   } catch (e) { console.error(e); }
 };
 
-watch(() => props.initialCategory, (newVal) => {
-  selectedCategory.value = newVal || '全部'
-})
-
-// ✨ Toast 提示系統 (取代 alert)
+// Toast 提示系統
 const toastMessage = ref('')
 const showToast = (msg) => {
   toastMessage.value = msg
@@ -161,22 +139,12 @@ watch(() => props.user, (newUser) => {
   if (newUser) fetchUserItineraries();
   else itineraries.value = [];
 });
-
-watch(() => props.initialCategory, (newCategory) => {
-  console.log(`[Home.vue] 🔄 偵測到外層分類 Props 變更為: ${newCategory}`)
-  selectedCategory.value = newCategory || '全部'
-})
-
-// 也可以加一個監聽確認 selectedCategory 真的有改動
-watch(selectedCategory, (newVal) => {
-  console.log(`[Home.vue] ✅ 目前畫面實際套用的分類變數: ${newVal}`)
-})
 </script>
 
 <template>
 <div class="home-page">
 
-  <!-- ✨ 全域 Toast 提示 -->
+  <!-- 全域 Toast 提示 -->
   <div v-if="toastMessage" class="toast-notification">
     {{ toastMessage }}
   </div>
@@ -187,8 +155,7 @@ watch(selectedCategory, (newVal) => {
       <div class="search-card">
         <div class="search-tabs">
           <span class="active">
-            <!-- ✨ 找景點 Tab 的 Icon 與排版對齊 -->
-            <Search :size="18" class="icon-inline" />找景點
+            🔍 找景點
           </span>
         </div>
         <div class="search-inputs">
@@ -203,15 +170,12 @@ watch(selectedCategory, (newVal) => {
     <div class="header">
       <div class="header-left">
         <h2>
-          <!--  標題列 Icon 整合 -->
-          <TreePalm :size="24" class="icon-inline text-primary" /> 
-          熱門景點列表
+          🌴 熱門景點列表
         </h2>
         <span class="category-badge" v-if="selectedCategory !== '全部'">{{ selectedCategory }}</span>
         <span class="count" v-if="!errorMessage && !loading">共 {{ sortedSpots.length }} 個景點</span>
       </div>
       <div class="header-right" v-if="!loading && !errorMessage">
-        <!--  移除下拉選單中的 Emoji -->
         <select v-model="sortBy" class="sort-select">
           <option value="newest">最新建立</option>
           <option value="oldest">最舊建立</option>
@@ -220,19 +184,38 @@ watch(selectedCategory, (newVal) => {
       </div>
     </div>
 
-    <!--  載入狀態 Icon 動態化 -->
-    <div v-if="loading" class="state-box loading">
-      <Loader2 class="spinner-icon" :size="20" /> 正在讀取資料...
+    <!-- ☠️ 骨架屏 Skeleton Loading (取代原本乾巴巴的轉圈圈) -->
+    <div v-if="loading" class="grid-layout">
+      <div v-for="n in 8" :key="n" class="spot-card skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="card-body">
+          <div class="skeleton-title"></div>
+          <div class="skeleton-title short"></div>
+          
+          <div class="skeleton-text mt-4"></div>
+          
+          <div class="skeleton-tags">
+            <div class="skeleton-tag"></div>
+            <div class="skeleton-tag"></div>
+            <div class="skeleton-tag"></div>
+          </div>
+          
+          <div class="footer skeleton-footer">
+            <div class="skeleton-text block"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- 錯誤提示 -->
     <div v-else-if="errorMessage" class="state-box error">
-      <AlertTriangle class="error-icon" :size="22" />
-      <pre>{{ errorMessage }}</pre>
+      ⚠️ <pre>{{ errorMessage }}</pre>
       <button @click="fetchSpots" class="retry-btn">
-        <RefreshCw :size="14" class="icon-inline" /> 再試一次
+        🔄 再試一次
       </button>
     </div>
 
+    <!-- 真實資料呈現區 -->
     <div v-else class="grid-layout">
       <div
         v-for="spot in sortedSpots"
@@ -240,39 +223,36 @@ watch(selectedCategory, (newVal) => {
         class="spot-card"
         @click="openDetailModal(spot)"
       >
-        <!--  圖片區改為動態漸層色塊與大標題 -->
+        <!-- 圖片區改為動態漸層色塊與大標題 -->
         <div class="image-box dynamic-color-box" :style="getBgStyle(spot.category)">
           <!-- 景點名稱大字 -->
           <div class="spot-title-overlay">{{ spot.name }}</div>
 
           <span class="category-tag">{{ spot.category || '未分類' }}</span>
           
-          <!--  卡片定位改用 MapPin 圖標 -->
           <span class="location-tag" v-if="spot.location">
-            <MapPin :size="12" class="icon-inline text-red" /> {{ spot.location }}
+            📍 {{ spot.location }}
           </span>
 
-          <!--  評分改用 Star 圖標 -->
           <div v-if="(spot.review_count || 0) >= 3" class="img-rating-badge">
-            <Star :size="11" class="icon-inline fill-yellow text-yellow" /> {{ spot.avg_rating }}
+            ⭐ {{ spot.avg_rating }}
           </div>
         </div>
         
         <div class="card-body">
+          <!-- ✨ 鎖定標題高度，確保排版不因字數而高低起伏 -->
           <div class="title-row">
             <h3 class="spot-name">{{ spot.name }}</h3>
             <div v-if="(spot.review_count || 0) < 3" class="insufficient-badge">人數不足</div>
           </div>
           
           <div class="info-row">
-            <!--  卡片時間改用 Clock 圖標 -->
             <span class="info-item">
-              <Clock :size="14" class="icon-inline text-muted" /> {{ spot.hours || '全天開放' }}
+              🕒 {{ spot.hours || '全天開放' }}
             </span>
             <span class="dot-separator">•</span>
-            <!--  卡片評論數改用 MessageSquare 圖標 -->
             <span class="info-item">
-              <MessageSquare :size="14" class="icon-inline text-muted" /> {{ spot.review_count || 0 }} 則評論
+              💬 {{ spot.review_count || 0 }} 則評論
             </span>
           </div>
           
@@ -282,16 +262,12 @@ watch(selectedCategory, (newVal) => {
             </template>
           </div>
           
+          <!-- ✨ 使用 Flexbox 確保底部 Emoji 與文字絕對垂直置中，並鎖定 60px 高度 -->
           <div class="footer">
             <div class="rec-text">
-              <!--  推薦活動前置加上 Award 專業獎章圖示 -->
-              <span class="label">
-                💡 推薦：
-              </span>
+              <span class="label">💡 推薦：</span>
               <span class="rec-content">{{ spot.activities?.activities?.slice(0, 3).join('、') || '自由探索' }}</span>
             </div>
-            
-            <!--  依照需求，將這層的 buttons 移除，保持卡片介面極簡，讓使用者點擊卡片後進入彈窗操作 -->
           </div>
         </div>
       </div>
@@ -304,9 +280,8 @@ watch(selectedCategory, (newVal) => {
         <div class="detail-layout">
           <!-- 左側：詳細資訊 -->
           <div class="detail-info-side">
-            <!--  彈窗頂部大圖也同步改為動態漸層色塊與大標題 -->
+            <!-- 彈窗頂部大圖也同步改為動態漸層色塊與大標題 -->
             <div class="detail-image-box dynamic-color-box" :style="getBgStyle(currentDetailSpot.category)">
-              <!-- 景點名稱大字 -->
               <div class="spot-title-overlay modal-title-overlay">{{ currentDetailSpot.name }}</div>
 
               <div class="detail-img-overlay">
@@ -316,27 +291,20 @@ watch(selectedCategory, (newVal) => {
             <div class="detail-content">
               <h2>{{ currentDetailSpot.name }}</h2>
               
-              <!--  彈窗地點改用 MapPin 圖標 -->
               <p class="detail-location">
-                <MapPin :size="16" class="icon-inline text-primary" /> {{ currentDetailSpot.location }}
+                📍 {{ currentDetailSpot.location }}
               </p>
               
               <div class="detail-meta">
                 <div class="meta-item">
-                  <!--  彈窗 meta 項目改用 Clock 圖標 -->
-                  <span class="icon">
-                    <Clock :size="20" class="text-primary icon-align-middle" />
-                  </span>
+                  <span class="icon">🕒</span>
                   <div class="text">
                     <strong>營業時間</strong>
                     <span>{{ currentDetailSpot.hours || '全天開放' }}</span>
                   </div>
                 </div>
                 <div class="meta-item">
-                  <!--  彈窗評分項目改用 Star 圖標 -->
-                  <span class="icon">
-                    <Star :size="20" class="fill-yellow text-yellow icon-align-middle" />
-                  </span>
+                  <span class="icon">⭐</span>
                   <div class="text">
                     <strong>評價分數</strong>
                     <span>{{ currentDetailSpot.avg_rating ? `${currentDetailSpot.avg_rating} / 5.0` : '尚無足夠評價' }}</span>
@@ -359,12 +327,11 @@ watch(selectedCategory, (newVal) => {
               </div>
               
               <div class="detail-actions">
-                <!--  彈窗的按鈕保留，作為使用者的主要操作區 -->
                 <button @click="openEditModal(currentDetailSpot)" class="btn-action btn-edit">
-                  <Edit3 :size="14" class="icon-inline" /> 編輯資訊
+                  ✏️ 編輯資訊
                 </button>
                 <button @click="openAddModal(currentDetailSpot.id)" class="btn-action btn-add">
-                  <Calendar :size="14" class="icon-inline" /> 加入我的行程
+                  📅 加入我的行程
                 </button>
               </div>
             </div>
@@ -412,7 +379,24 @@ body {
   font-family: your-current-font, 'Noto Color Emoji', sans-serif;
 }
 
-/*  Toast 提示系統樣式 */
+/* ☠️ 骨架屏 Skeleton Loading 動畫樣式 */
+.skeleton-card { cursor: default; pointer-events: none; }
+.skeleton-img { height: 180px; width: 100%; background: var(--border-color); animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-title { height: 20px; width: 80%; background: var(--border-color); border-radius: 4px; margin-bottom: 8px; animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-title.short { width: 40%; margin-bottom: 15px; }
+.skeleton-text { height: 14px; width: 60%; background: var(--border-color); border-radius: 4px; margin-bottom: 10px; animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-text.block { width: 100%; height: 16px; margin: 0; }
+.skeleton-tags { display: flex; gap: 8px; margin-top: 15px; margin-bottom: auto; }
+.skeleton-tag { height: 22px; width: 60px; background: var(--border-color); border-radius: 6px; animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-footer { display: flex; align-items: center; }
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.2; }
+  100% { opacity: 0.6; }
+}
+
+/* Toast 提示系統樣式 */
 .toast-notification {
   position: fixed;
   bottom: 30px;
@@ -438,17 +422,6 @@ body {
 .text-primary { color: var(--primary-color); }
 .text-muted { color: var(--text-secondary); }
 
-/* ✨ SVG 向量圖示微調對齊，徹底搞定「飄浮」 */
-.icon-inline {
-  display: inline-block;
-  align-self: center;
-  vertical-align: middle;
-  margin-right: 4px;
-}
-.icon-align-middle {
-  vertical-align: middle;
-}
-
 .grid-layout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); align-items: start; }
 @media (max-width: 1150px) { .grid-layout { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 850px) { .grid-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -458,22 +431,22 @@ body {
 .spot-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 .image-box { position: relative; height: 180px; flex-shrink: 0; overflow: hidden; box-sizing: border-box; }
 
-/* ✨ 動態漸層色塊與大標題設計 */
+/* 動態漸層色塊與大標題設計 */
 .dynamic-color-box {
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 40px 20px; /* ✨ 增加上下內距，避開四個角落的絕對定位 Tag */
-  box-sizing: border-box; /* ✨ 確保 padding 不會撐破原本設定的卡片高度 */
+  padding: 40px 20px;
+  box-sizing: border-box; 
   transition: filter 0.3s ease;
 }
 .spot-card:hover .dynamic-color-box {
-  filter: brightness(1.15); /* 卡片懸浮提亮 */
+  filter: brightness(1.15);
 }
 .spot-title-overlay {
   color: white;
-  font-size: 1.4rem; /* ✨ 稍微調小一點，避免文字過擠 */
+  font-size: 1.4rem; 
   font-weight: 900;
   line-height: 1.4;
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -482,7 +455,7 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  word-break: break-word; /* ✨ 確保無空白長字串能強制換行，防止撐破版面 */
+  word-break: break-word; 
   width: 100%;
 }
 .modal-title-overlay {
@@ -490,20 +463,17 @@ body {
   text-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
-
-/* ✨ 評分與地標 Tag 優雅排版對齊 */
 .img-rating-badge { position: absolute; top: 10px; right: 10px; background: rgba(255, 215, 0, 0.95); color: #856404; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 3px; z-index: 2; }
-.text-yellow { color: #f1c40f; }
-.fill-yellow { fill: #f1c40f; }
 .category-tag { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); color: var(--primary-color); font-size: 10px; font-weight: bold; padding: 3px 10px; border-radius: 20px; z-index: 2;}
 .location-tag { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; z-index: 2;}
 
 .card-body { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
-.title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 5px; }
-.spot-name { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-color); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
-.insufficient-badge { font-size: 10px; color: var(--text-secondary); background: var(--input-bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; flex-shrink: 0; }
 
-/* ✨ 資訊列 Flex 垂直置中，對齊圖標與文字 */
+/* 鎖定標題高度，完美對齊 */
+.title-row { height: 50px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 5px; overflow: hidden; }
+.spot-name { margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-color); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.insufficient-badge { font-size: 10px; color: var(--text-secondary); background: var(--input-bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); white-space: nowrap; flex-shrink: 0;}
+
 .info-row { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; }
 .info-item { display: inline-flex; align-items: center; gap: 4px; }
 .dot-separator { margin: 0 8px; color: #ccc; }
@@ -511,19 +481,38 @@ body {
 .tags-row { display: flex; gap: 6px; margin-bottom: 15px; flex-wrap: wrap; height: 24px; overflow: hidden; }
 .feature-tag { background: var(--input-bg); color: var(--primary-color); border: 1px solid var(--border-color); font-size: 10px; padding: 2px 8px; border-radius: 6px; }
 
-/* ✨ 底部資訊與推薦活動：強制設定固定高度來解決橫線高低不同的問題 */
+/* 鎖定底部高度與 Flexbox 對齊 Emoji */
+.footer { 
+  margin-top: auto; 
+  border-top: 1px solid var(--border-color); 
+  padding-top: 12px; 
+  height: 60px; 
+  box-sizing: border-box;
+  display: flex; 
+  align-items: center; 
+}
 
-.footer { margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; display: flex; justify-content: space-between; align-items: center; }
-.rec-text { font-size: 0.8rem; color: var(--text-secondary); flex: 1; margin-right: 10px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
-.label { font-weight: bold; display: inline-block; align-items: center; gap: 3px; }
+.rec-text { 
+  font-size: 0.8rem; 
+  color: var(--text-secondary); 
+  width: 100%; 
+  line-height: 1.4; 
+  display: -webkit-box; 
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+
+.label { font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
 .rec-content { color: var(--text-color); }
 
-.actions { display: flex; gap: 8px; flex-shrink: 0; }
 .btn-action { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: all 0.2s ease; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 4px; }
 .btn-action.btn-edit { background-color: var(--input-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
 .btn-action.btn-edit:hover { color: var(--primary-color); border-color: var(--primary-color); background-color: rgba(50, 100, 255, 0.05); }
 .btn-action.btn-add { background-color: var(--primary-color); color: white; }
 .btn-action.btn-add:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(50, 100, 255, 0.3); }
+
 .btn-primary {
     background-color: var(--primary-color);
     color: #fff;
@@ -535,14 +524,10 @@ body {
     transition: all .3s ease;
 }
 
-/* ⏳ 讀取旋轉動畫與讀取中樣式 */
 .state-box { padding: 40px; text-align: center; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 8px; }
-.spinner-icon { animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
 .retry-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; padding: 4px 10px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 
-/* 🏛️ 彈窗詳細資訊樣式對齊調整 */
+/* 彈窗詳細資訊樣式對齊調整 */
 .detail-modal-card { background: var(--card-bg); border-radius: 16px; width: 90%; max-width: 1000px; max-height: 85vh; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 @keyframes modalScaleIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 .modal-close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
@@ -555,7 +540,6 @@ body {
 .detail-content { padding: 30px; }
 .detail-content h2 { margin: 0 0 10px 0; font-size: 2rem; color: var(--text-color); }
 
-/* ✨ 彈窗地點對齊 */
 .detail-location { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 25px; display: inline-flex; align-items: center; gap: 6px; }
 
 .detail-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--input-bg); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid var(--border-color); }
@@ -589,7 +573,7 @@ body {
 .hero-section { position: relative; background-image: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; height: 400px; display: flex; align-items: center; justify-content: center; margin-bottom: 60px; border-radius: 10px; }
 .hero-title { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-size: 2.5rem; text-align: center; margin-bottom: 20px; }
 
-/* ✨ 搜尋卡片對齊優化 */
+/* 搜尋卡片對齊優化 */
 .search-card { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 20px; width: 100%; max-width: 800px; position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); border: 1px solid var(--border-color); }
 .search-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
 .search-tabs span { font-weight: bold; cursor: pointer; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; }
@@ -599,3 +583,4 @@ body {
 .search-inputs input:focus { border-color: var(--primary-color); }
 .search-btn { width: 120px; font-size: 1.1rem; }
 </style>
+```
