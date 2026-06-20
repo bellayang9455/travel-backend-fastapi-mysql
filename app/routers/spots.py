@@ -16,8 +16,6 @@ router = APIRouter(tags=["spots"])
 # 列出所有景點，支援關鍵字搜尋
 @router.get("/", response_model=List[schemas.SpotOut])
 def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
-    
-    # ✨ 終極效能優化：使用 JOIN 和 GROUP BY，把 101 次查詢變成 1 次查詢！
     # 直接在查詢層面就算好 review_count 和 avg_rating
     query = db.query(
         models.Spot,
@@ -34,8 +32,8 @@ def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
         search_keyword = f"%{q}%"
         query = query.filter(
             or_(
-                models.Spot.name.ilike(search_keyword),
-                models.Spot.location.ilike(search_keyword)
+                models.Spot.name.like(search_keyword),
+                models.Spot.location.like(search_keyword)
             )
         )
         
