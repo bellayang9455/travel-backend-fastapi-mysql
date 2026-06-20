@@ -9,13 +9,27 @@ from datetime import datetime, timedelta,timezone
 from sqlalchemy import or_
 from sqlalchemy import func
 
+from sqlalchemy import func, or_, outerjoin
+
 router = APIRouter(tags=["spots"])
 
 # 列出所有景點，支援關鍵字搜尋
 @router.get("/", response_model=List[schemas.SpotOut])
 def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
-    query = db.query(models.Spot)
-    # 如果有搜尋關鍵字，就用 ilike 做模糊搜尋，搜尋範圍包含景點名稱和地點
+    
+    # ✨ 終極效能優化：使用 JOIN 和 GROUP BY，把 101 次查詢變成 1 次查詢！
+    # 直接在查詢層面就算好 review_count 和 avg_rating
+    query = db.query(
+        models.Spot,
+        func.count(models.Review.id).label('review_count'),
+        func.avg(models.Review.stars).label('avg_rating')
+    ).outerjoin(
+        models.Review, models.Spot.id == models.Review.spot_id
+    ).group_by(
+        models.Spot.id
+    )
+    
+    # ✨ 新增：同時搜尋「名稱」與「地點」的模糊比對
     if q:
         search_keyword = f"%{q}%"
         query = query.filter(
@@ -25,17 +39,15 @@ def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
             )
         )
         
-    spots = query.order_by(models.Spot.created_at.desc()).all()
+    # 執行查詢，這會回傳一組一組的 tuple: (Spot物件, 評論數, 平均星等)
+    results = query.order_by(models.Spot.created_at.desc()).all()
 
-    # 幫每個景點算分
-    for s in spots:
-        # 計算平均星等
-        avg = db.query(func.avg(models.Review.stars)).filter(models.Review.spot_id == s.id).scalar()
-        # 計算總評論數
-        count = db.query(func.count(models.Review.id)).filter(models.Review.spot_id == s.id).scalar()
-        
-        s.avg_rating = round(avg, 1) if avg else 0.0
-        s.review_count = count if count else 0
+    # 把算好的數據塞回 Spot 物件裡，讓 Pydantic (schemas.SpotOut) 可以順利解析
+    spots = []
+    for spot, count, avg in results:
+        spot.review_count = count
+        spot.avg_rating = round(avg, 1) if avg else 0.0
+        spots.append(spot)
         
     return spots
 
