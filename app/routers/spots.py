@@ -15,7 +15,16 @@ router = APIRouter(tags=["spots"])
 @router.get("/", response_model=List[schemas.SpotOut])
 def list_spots(q: str = Query(None), db: Session = Depends(get_db)):
     query = db.query(models.Spot)
-    # ... 原本的搜尋過濾邏輯 ...
+    # 如果有搜尋關鍵字，就用 ilike 做模糊搜尋，搜尋範圍包含景點名稱和地點
+    if q:
+        search_keyword = f"%{q}%"
+        query = query.filter(
+            or_(
+                models.Spot.name.ilike(search_keyword),
+                models.Spot.location.ilike(search_keyword)
+            )
+        )
+        
     spots = query.order_by(models.Spot.created_at.desc()).all()
 
     # 幫每個景點算分
