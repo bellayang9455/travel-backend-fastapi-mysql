@@ -583,4 +583,3 @@ body {
 .search-inputs input:focus { border-color: var(--primary-color); }
 .search-btn { width: 120px; font-size: 1.1rem; }
 </style>
-```
