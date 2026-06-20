@@ -88,7 +88,10 @@ const fetchSpots = async (keyword) => {
   console.log('🔴 fetchSpots 呼叫 API，searchK:', searchK)
   loading.value = true
   try {
-    const response = await api.get(`/api/spots/`, { params: { q: searchK } })
+    const response = await api.get(`/api/spots/`, { 
+      params: { q: searchK },
+      paramsSerializer: params => new URLSearchParams(params).toString()
+    })
     console.log('🔴 API 回傳筆數:', response.data.length)
     spots.value = response.data
     if (showDetailModal.value && currentDetailSpot.value) {
