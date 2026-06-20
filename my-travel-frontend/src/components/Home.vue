@@ -56,12 +56,22 @@ const getBgStyle = (category) => {
 
 const sortedSpots = computed(() => {
   let list = [...spots.value]
+  console.log('🟦 原始 spots 數量:', list.length, '搜尋詞 q:', route.query.q)
+
   if (selectedCategory.value !== '全部') {
+    console.log('🟨 套用分類篩選:', selectedCategory.value)
     list = list.filter(spot => (spot.category || '未分類').includes(selectedCategory.value))
+    console.log('🟨 分類篩選後剩餘:', list.length)
   }
+
   if (route.query.location) {
+    console.log('🟧 套用地點篩選:', route.query.location)
     list = list.filter(spot => spot.region === route.query.location)
+    console.log('🟧 地點篩選後剩餘:', list.length)
   }
+
+  console.log('✅ 最終顯示數量:', list.length)
+
   if (sortBy.value === 'newest') return list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   if (sortBy.value === 'oldest') return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
   if (sortBy.value === 'name_asc') return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
@@ -139,6 +149,7 @@ watch(() => route.query.q, (newK) => {
   fetchSpots(newK || '')
   searchQuery.value = newK || ''
 })
+
 watch(() => props.user, (newUser) => {
   if (newUser) fetchUserItineraries();
   else itineraries.value = [];
