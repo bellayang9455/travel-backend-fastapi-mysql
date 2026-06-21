@@ -25,7 +25,7 @@ const generatePlan = async () => {
   if (!form.value.destination) return alert('請輸入地點！')
 
   if (form.value.days && form.value.days > 14) {
-    return alert('⚠️ 為了確保 AI 規劃品質與避免系統超時，單次行程最多支援 14 天喔！長途旅行建議您分拆成多次規劃。')
+    return alert('⚠️ 為了確保 AI 規劃品質與避免系統超時，單次行程最多支援 6 天喔！長途旅行建議您分拆成多次規劃。')
   
   }
   isLoading.value = true
@@ -113,7 +113,7 @@ export default { name: 'AIPlanner' }
     
     <div class="planner-header">
       <h2>🤖 AI 智能行程規劃</h2>
-      <p class="subtitle">輸入您的目的地與偏好，讓 AI 為您打造完美專屬旅程</p>
+      <p class="subtitle">輸入您的目的地與偏好，讓 AI 為您打造完美專屬旅程(目前因系統限制，單次最多規劃 6 天)</p>
     </div>
     
     <div class="search-panel">
@@ -126,7 +126,7 @@ export default { name: 'AIPlanner' }
         <div class="input-item days">
           <label>旅遊天數</label>
           <div class="days-input-wrapper">
-            <input type="number" v-model.number="form.days" min="1" max="30" /> 
+            <input type="number" v-model.number="form.days" min="1" max="6" /> 
             <span class="unit-text">天</span>
           </div>
         </div>

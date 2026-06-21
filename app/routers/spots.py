@@ -65,7 +65,7 @@ def check_name_exists(name: str, db: Session = Depends(get_db)):
         "exists": len(similar_spots) > 0,
         "similar_names": [s.name for s in similar_spots]
     }
-    
+        
 @router.post("/", response_model=schemas.SpotOut, status_code=201)
 def create_spot(payload: schemas.SpotCreate, db: Session = Depends(get_db)):
     # 1. 先檢查有沒有重複的景點名稱
