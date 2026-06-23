@@ -161,6 +161,11 @@ watch(() => props.user, (newUser) => {
   if (newUser) fetchUserItineraries();
   else itineraries.value = [];
 });
+
+watch(() => props.initialCategory, (newCat) => {
+  console.log('🟩 [Home.vue] 收到外層分類變更:', newCat)
+  selectedCategory.value = newCat || '全部'
+})
 </script>
 
 <template>
